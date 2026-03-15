@@ -1,0 +1,87 @@
+╔══════════════════════════════════════════════════════╗
+║       SPoT – Smart Protocol | STARTANLEITUNG         ║
+╚══════════════════════════════════════════════════════╝
+
+EINMALIGE INSTALLATION (nur beim ersten Mal)
+════════════════════════════════════════════
+1. Diesen Ordner irgendwo auf deinem PC speichern
+   z.B. C:\SPoT\
+
+2. Kommandozeile öffnen (Windows-Taste → "cmd" tippen)
+
+3. In den Ordner wechseln:
+   cd C:\SPoT
+
+4. Pakete installieren:
+   pip install -r requirements.txt
+
+5. API-Key einrichten:
+   - Datei ".env.example" kopieren und umbenennen zu ".env"
+   - In .env deinen Anthropic API-Key eintragen:
+     ANTHROPIC_API_KEY=sk-ant-DEIN-KEY
+
+
+JEDEN TAG SO STARTEN
+════════════════════
+1. Kommandozeile öffnen
+
+2. In den Ordner wechseln:
+   cd C:\SPoT
+
+3. Backend starten:
+   python main.py
+
+4. Browser öffnen:
+   http://localhost:8000
+
+   → Dashboard öffnet sich automatisch!
+   → API-Dokumentation: http://localhost:8000/docs
+
+
+OFFLINE-MODUS (ohne Backend)
+════════════════════════════
+Die Datei "SPoT_Dashboard_v3.html" kannst du auch 
+direkt im Browser öffnen (Doppelklick).
+Dann läuft alles im localStorage des Browsers.
+KI-Analyse nicht verfügbar im Offline-Modus.
+
+
+ORDNERSTRUKTUR
+══════════════
+SPoT/
+├── main.py                  ← Backend (hier starten)
+├── requirements.txt         ← Pakete
+├── .env                     ← API-Key (GEHEIM!)
+├── SPoT_Dashboard_v3.html   ← Frontend
+└── data/
+    ├── klienten.json        ← Klienten-Datenbank
+    ├── knowledge_base/      ← Deine PDFs
+    ├── client_docs/         ← Klienten-Dokumente
+    └── exports/             ← Generierte Dokumente
+
+
+HÄUFIGE FEHLER
+══════════════
+"pip nicht gefunden"
+→ Python neu installieren von python.org
+  Bei Installation "Add to PATH" anhaken!
+
+"Module not found"
+→ pip install -r requirements.txt nochmal ausführen
+
+"Port bereits in Verwendung"
+→ python main.py --port 8001 (dann localhost:8001)
+
+KI-Analyse liefert Demo-Text
+→ .env Datei prüfen, ANTHROPIC_API_KEY korrekt?
+
+
+NÄCHSTE SCHRITTE (Mac Mini M4)
+════════════════════════════════
+Wenn der Mac Mini M4 da ist:
+1. Ollama installieren: ollama.com
+2. Gemma2 27B laden: ollama pull gemma2:27b
+3. In .env ergänzen: OLLAMA_HOST=http://localhost:11434
+4. Die API-Hooks in main.py sind bereits vorbereitet!
+
+══════════════════════════════════════════════════════

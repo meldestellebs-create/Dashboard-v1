@@ -1,0 +1,2179 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SPoT – Smart Protocol</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-base: #0a0e13;
+  --bg-panel: #0f1419;
+  --bg-card: #141c24;
+  --bg-card2: #1a2332;
+  --border: #1e2d3d;
+  --border-bright: #2a3f55;
+  --green: #00e676;
+  --green-dim: #00c853;
+  --green-glow: rgba(0,230,118,0.15);
+  --orange: #ff9800;
+  --orange-dim: rgba(255,152,0,0.2);
+  --red: #f44336;
+  --red-dim: rgba(244,67,54,0.2);
+  --blue: #29b6f6;
+  --blue-dim: rgba(41,182,246,0.15);
+  --yellow: #ffd54f;
+  --text-primary: #e8eaf6;
+  --text-secondary: #7986a8;
+  --text-dim: #4a5568;
+  --mono: 'JetBrains Mono', monospace;
+  --sans: 'Space Grotesk', sans-serif;
+  --sidebar-w: 200px;
+  --header-h: 52px;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-family: var(--sans);
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── TOPBAR ── */
+.topbar {
+  height: var(--header-h);
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  flex-shrink: 0;
+  position: relative;
+}
+.topbar::before {
+  content:'';
+  position:absolute;
+  top:0; left:0; right:0;
+  height:1px;
+  background: linear-gradient(90deg, transparent, var(--green), transparent);
+  opacity: 0.4;
+}
+.logo {
+  font-family: var(--mono);
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+.logo span { color: var(--green); }
+.logo-sub {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text-secondary);
+  margin-top: 1px;
+}
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text-secondary);
+}
+.sys-badge {
+  display: flex; align-items: center; gap: 6px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  padding: 4px 10px;
+  border-radius: 4px;
+}
+.dot-green { width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green); animation: pulse 2s infinite; }
+.dot-orange { width:6px;height:6px;border-radius:50%;background:var(--orange); }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+.client-badge {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--green);
+  background: var(--green-glow);
+  border: 1px solid rgba(0,230,118,0.3);
+  padding: 4px 10px;
+  border-radius: 4px;
+}
+
+/* ── LAYOUT ── */
+.layout { display:flex; flex:1; overflow:hidden; }
+
+/* ── SIDEBAR ── */
+.sidebar {
+  width: var(--sidebar-w);
+  background: var(--bg-panel);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  padding: 16px 0;
+}
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  cursor: pointer;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  transition: all 0.15s;
+  border-left: 2px solid transparent;
+  letter-spacing: 0.5px;
+}
+.nav-item:hover { color: var(--text-primary); background: rgba(255,255,255,0.03); }
+.nav-item.active {
+  color: var(--green);
+  background: var(--green-glow);
+  border-left-color: var(--green);
+}
+.nav-icon { font-size: 14px; width: 18px; text-align: center; flex-shrink:0; }
+.sidebar-bottom {
+  margin-top: auto;
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
+}
+.obs-status {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--text-dim);
+}
+.obs-status .on { color: var(--green); font-weight: 700; }
+
+/* ── CONTENT ── */
+.content { flex:1; overflow-y:auto; padding:16px; background: var(--bg-base); }
+.screen { display:none; }
+.screen.active { display:grid; gap:12px; }
+
+/* ── CARDS ── */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 14px;
+}
+.card-title {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.card-title span { color: var(--text-dim); font-weight:400; }
+
+/* ── BADGES ── */
+.badge {
+  display: inline-flex; align-items:center; gap:4px;
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+.badge-green { background: rgba(0,230,118,0.15); color: var(--green); border:1px solid rgba(0,230,118,0.3); }
+.badge-orange { background: var(--orange-dim); color: var(--orange); border:1px solid rgba(255,152,0,0.3); }
+.badge-red { background: var(--red-dim); color: var(--red); border:1px solid rgba(244,67,54,0.3); }
+.badge-blue { background: var(--blue-dim); color: var(--blue); border:1px solid rgba(41,182,246,0.3); }
+
+/* ── BUTTONS ── */
+.btn {
+  display: inline-flex; align-items:center; justify-content:center; gap:6px;
+  padding: 7px 14px;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  transition: all 0.15s;
+}
+.btn-green { background: var(--green); color: #000; }
+.btn-green:hover { background: #00ff99; box-shadow: 0 0 12px rgba(0,230,118,0.4); }
+.btn-red { background: var(--red); color: #fff; }
+.btn-red:hover { background: #e53935; }
+.btn-ghost {
+  background: transparent;
+  border: 1px solid var(--border-bright);
+  color: var(--text-secondary);
+}
+.btn-ghost:hover { border-color: var(--green); color: var(--green); }
+.btn-primary {
+  background: var(--bg-card2);
+  border: 1px solid var(--border-bright);
+  color: var(--text-primary);
+}
+.btn-primary:hover { border-color: var(--green); }
+
+/* ── INPUTS ── */
+input[type=text], input[type=number], textarea, select {
+  width: 100%;
+  background: var(--bg-base);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 7px 10px;
+  color: var(--text-primary);
+  font-family: var(--mono);
+  font-size: 11px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+input:focus, textarea:focus, select:focus { border-color: var(--green); }
+select { appearance: none; cursor:pointer; }
+textarea { resize: vertical; min-height: 70px; }
+label { font-family: var(--mono); font-size: 10px; color: var(--text-secondary); display:block; margin-bottom:5px; }
+
+/* ── TAGS ── */
+.tag {
+  display: inline-flex; align-items:center;
+  padding: 5px 12px;
+  border: 1px solid var(--border-bright);
+  border-radius: 20px;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  color: var(--text-secondary);
+}
+.tag:hover { border-color: var(--green); color: var(--green); }
+.tag.active { background: var(--green-glow); border-color: var(--green); color: var(--green); }
+
+/* ── PROGRESS RING ── */
+.ring-wrap { position:relative; display:inline-flex; align-items:center; justify-content:center; }
+.ring-label {
+  position:absolute; text-align:center;
+  font-family: var(--mono);
+}
+.ring-pct { font-size: 22px; font-weight: 700; color: var(--green); }
+.ring-sub { font-size: 9px; color: var(--text-secondary); }
+
+/* ── PIPELINE STEPS ── */
+.pipe-step {
+  display: flex; align-items:center; gap:10px;
+  padding: 6px 0;
+  font-family: var(--mono);
+  font-size: 10px;
+}
+.pipe-dot {
+  width: 8px; height:8px; border-radius:50%; flex-shrink:0;
+}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-bright); border-radius:4px; }
+
+/* ── BOTTOM BAR ── */
+.bottom-bar {
+  padding: 10px 16px;
+  border-top: 1px solid var(--border);
+  background: var(--bg-panel);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── GRID LAYOUTS ── */
+.g2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.g3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; }
+.g13 { display:grid; grid-template-columns:1fr 3fr; gap:12px; }
+.g31 { display:grid; grid-template-columns:3fr 1fr; gap:12px; }
+
+/* ── TABLE ── */
+table { width:100%; border-collapse:collapse; }
+th {
+  text-align:left;
+  padding: 8px 10px;
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--text-dim);
+  letter-spacing: 1px;
+  text-transform:uppercase;
+  border-bottom: 1px solid var(--border);
+}
+td {
+  padding: 8px 10px;
+  font-family: var(--mono);
+  font-size: 10px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-secondary);
+}
+tr:hover td { background: rgba(255,255,255,0.02); }
+tr td:first-child { color: var(--text-primary); }
+
+/* ── CHART BARS ── */
+.bar-wrap { display:flex; align-items:flex-end; gap:6px; height:80px; }
+.bar-col { display:flex; flex-direction:column; align-items:center; gap:4px; flex:1; }
+.bar {
+  width:100%; border-radius: 3px 3px 0 0;
+  transition: height 0.3s;
+}
+.bar-label { font-family:var(--mono); font-size:8px; color:var(--text-dim); }
+
+/* ── RADAR ── */
+.radar-wrap { position:relative; }
+
+/* ── AI SUGGESTION ── */
+.ai-suggestion {
+  background: var(--bg-base);
+  border: 1px solid var(--border);
+  border-left: 2px solid var(--green);
+  padding: 10px 12px;
+  border-radius: 4px;
+  margin-bottom: 8px;
+}
+.ai-suggestion-header {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--green);
+  margin-bottom:6px;
+  display:flex; align-items:center; gap:6px;
+}
+.ai-suggestion-body {
+  font-size: 11px;
+  color: var(--text-primary);
+  line-height: 1.5;
+}
+.suggestion-actions { display:flex; gap:6px; margin-top:8px; }
+
+/* ── FUSION STATUS ── */
+.fusion-item {
+  display:flex; flex-direction:column; align-items:center; gap:6px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  text-align:center;
+  cursor:pointer;
+  transition: all 0.15s;
+}
+.fusion-item:hover { border-color: var(--green); }
+.fusion-item.active { border-color: var(--green); background: var(--green-glow); }
+.fusion-icon { font-size:22px; }
+.fusion-label { font-family:var(--mono); font-size:9px; color:var(--text-secondary); }
+.fusion-pct { font-family:var(--mono); font-size:11px; font-weight:700; color:var(--green); }
+
+/* ── CHECKLIST ── */
+.check-item {
+  display:flex; align-items:center; gap:8px;
+  padding: 6px 0;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text-secondary);
+}
+.check-item input[type=checkbox] {
+  width:14px; height:14px;
+  accent-color: var(--green);
+  cursor:pointer;
+}
+
+/* ── FILE ROW ── */
+.file-row {
+  display:flex; align-items:center; gap:10px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  margin-bottom:6px;
+  cursor:pointer;
+  transition: all 0.15s;
+}
+.file-row:hover { border-color: var(--border-bright); background: rgba(255,255,255,0.02); }
+.file-icon { font-size:16px; flex-shrink:0; }
+.file-name { font-family:var(--mono); font-size:10px; flex:1; }
+.file-meta { font-family:var(--mono); font-size:9px; color:var(--text-dim); }
+
+/* ── LEITFRAGE CARD ── */
+.leitfrage {
+  background: var(--bg-card2);
+  border: 1px solid var(--border-bright);
+  border-radius: 6px;
+  padding: 12px;
+}
+.leitfrage-header {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+}
+.leitfrage-q { font-size:12px; font-weight:600; margin-bottom:10px; color:var(--text-primary); }
+
+/* ── SPARKLINE ── */
+.sparkline { display:flex; align-items:flex-end; gap:2px; height:40px; }
+.spark-bar { flex:1; background: var(--green); border-radius:2px 2px 0 0; opacity:0.6; }
+
+/* mic button */
+.mic-btn {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  width: 30px; height:30px;
+  display:flex; align-items:center; justify-content:center;
+  cursor:pointer; font-size:13px;
+  transition: all 0.15s;
+  flex-shrink:0;
+}
+.mic-btn:hover { border-color: var(--green); box-shadow: 0 0 8px var(--green-glow); }
+.mic-btn.recording { border-color: var(--red); background: var(--red-dim); animation: pulse 1s infinite; }
+
+/* scroll indicator for tables */
+.table-scroll { max-height: 200px; overflow-y:auto; }
+
+/* section divider */
+.divider { height:1px; background: var(--border); margin: 8px 0; }
+
+/* DRAG ZONE */
+.drop-zone {
+  border: 2px dashed var(--border-bright);
+  border-radius: 6px;
+  padding: 24px;
+  text-align:center;
+  cursor:pointer;
+  transition: all 0.2s;
+}
+.drop-zone:hover { border-color: var(--green); background: var(--green-glow); }
+.drop-zone-icon { font-size:28px; margin-bottom:8px; }
+.drop-zone-text { font-family:var(--mono); font-size:11px; color: var(--text-secondary); }
+
+/* STAR ICON */
+.star-corner {
+  position:fixed; bottom:20px; right:20px;
+  font-size:28px; color: var(--border-bright);
+  pointer-events:none;
+}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div>
+    <div class="logo"><span>SPoT</span> – SMART PROTOCOL</div>
+    <div class="logo-sub" id="clientSubtitle">Client Name: JUSTIN SCHMIDT (16 yrs)</div>
+  </div>
+  <div class="topbar-right">
+    <div class="sys-badge">OS: macOS</div>
+    <div class="sys-badge">KI: LOCAL GEMMA 2 27B</div>
+    <div class="sys-badge">STORAGE: LOCAL ONLY</div>
+    <div class="client-badge" id="obsTopBadge">⬤ OBS: ON</div>
+    <div class="client-badge" id="backendIndicator" style="color:var(--orange);border-color:rgba(255,152,0,0.3);background:rgba(255,152,0,0.1);">⬤ BACKEND: PRÜFE...</div>
+  </div>
+</div>
+
+<div class="layout">
+  <!-- SIDEBAR -->
+  <nav class="sidebar">
+    <div class="nav-item active" onclick="showScreen('dashboard',this)">
+      <span class="nav-icon">⊞</span> DASHBOARD
+    </div>
+    <div class="nav-item" onclick="showScreen('clientprofile',this)">
+      <span class="nav-icon">◉</span> CLIENT PROFILE
+    </div>
+    <div class="nav-item" onclick="showScreen('pdfknowledge',this)">
+      <span class="nav-icon">◈</span> PDF KNOWLEDGE BASE
+    </div>
+    <div class="nav-item" onclick="showScreen('postprocessing',this)">
+      <span class="nav-icon">◎</span> POST-PROCESSING
+    </div>
+    <div class="nav-item" onclick="showScreen('reports',this)">
+      <span class="nav-icon">▤</span> REPORTS
+    </div>
+    <div class="nav-item" onclick="showScreen('settings',this)">
+      <span class="nav-icon">⚙</span> SETTINGS
+    </div>
+    <div class="sidebar-bottom">
+      <div class="obs-status">OBS RECORDING: <span class="on">ON</span><br>(Multi-Track)</div>
+    </div>
+  </nav>
+
+  <!-- CONTENT AREA -->
+  <div style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
+    <div class="content" id="contentArea">
+
+      <!-- ═══════════════════════════════════════════════
+           SCREEN 1: DASHBOARD / PROTOKOLL
+      ═══════════════════════════════════════════════ -->
+      <div class="screen active" id="screen-dashboard" style="grid-template-columns:1.2fr 1.5fr 1fr; grid-template-rows:auto auto; align-items:start;">
+
+        <!-- LEFT: Stammdaten + Interessen -->
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <div class="card">
+            <div class="card-title">STAMMDATEN <span>– HARD FACTS</span></div>
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              <div>
+                <label>Name</label>
+                <div style="display:flex;gap:6px;align-items:center;">
+                  <input type="text" value="JUSTIN SCHMIDT" id="clientName" oninput="updateClientHeader()">
+                  <div class="mic-btn" onclick="toggleMic(this)" title="Quick-Note aufnehmen">🎙</div>
+                </div>
+              </div>
+              <div style="display:flex;gap:8px;">
+                <div style="flex:1;">
+                  <label>Alter</label>
+                  <div style="display:flex;gap:6px;align-items:center;">
+                    <input type="number" value="16" id="clientAge" style="width:70px;" oninput="updateClientHeader()">
+                    <span style="font-family:var(--mono);font-size:9px;color:var(--text-dim);">RECORD<br>QUICK-NOTE</span>
+                    <div class="mic-btn" onclick="toggleMic(this)">🎙</div>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <label>Schule / Klasse</label>
+                <div style="display:flex;gap:6px;align-items:center;">
+                  <input type="text" value="" placeholder="z.B. Realschule, Kl. 10">
+                  <div class="mic-btn" onclick="toggleMic(this)">🎙</div>
+                </div>
+              </div>
+              <div>
+                <label>Zielgruppe</label>
+                <select>
+                  <option>Sek. I (Hauptschule)</option>
+                  <option selected>Sek. I (Realschule)</option>
+                  <option>Sek. II / Abitur</option>
+                  <option>Wechsler / Wiedereinsteiger</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">INTERESSEN-MATRIX <span>– CLICKABLE TAGS</span></div>
+            <div style="display:flex;flex-wrap:wrap;gap:6px;" id="tagContainer">
+              <div class="tag active" onclick="toggleTag(this)">TECHNIK</div>
+              <div class="tag" onclick="toggleTag(this)">SOZIALES</div>
+              <div class="tag" onclick="toggleTag(this)">WIRTSCHAFT</div>
+              <div class="tag active" onclick="toggleTag(this)">HANDWERK</div>
+              <div class="tag" onclick="toggleTag(this)">IT/TELEKOM</div>
+              <div class="tag" onclick="toggleTag(this)">VERWALTUNG</div>
+              <div class="tag" onclick="toggleTag(this)">BERUFSKOLLEG</div>
+              <div class="tag" onclick="toggleTag(this)">FOS</div>
+              <div class="tag" onclick="toggleTag(this)">GYMNASIUM</div>
+              <div class="tag" onclick="toggleTag(this)">DUALES STUDIUM</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CENTER: Leitfragen -->
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <div class="card">
+            <div class="card-title" style="justify-content:space-between;">
+              DIE GROSSEN FRAGEN <span>– ADAPTIVE LOGIC</span>
+              <select style="width:200px;font-size:9px;">
+                <option>ZIELGRUPPE: SEK. I (HAUPTSCHULE)</option>
+                <option selected>ZIELGRUPPE: SEK. I (REALSCHULE)</option>
+                <option>ZIELGRUPPE: SEK. II / ABITUR</option>
+              </select>
+            </div>
+            <div class="g3">
+              <div class="leitfrage">
+                <div class="leitfrage-header">LEITFRAGEN SEK. I<br><span style="color:var(--text-dim)">(Verschoben nach Sek. II)</span></div>
+                <div class="leitfrage-q">Frage 1: Was hast du bisher gerne gemacht?</div>
+                <textarea placeholder="Live-Transkript erscheint hier..." id="q1text" rows="3"></textarea>
+                <div style="margin-top:8px;">
+                  <button class="btn btn-green" style="width:100%" onclick="toggleRecordQ(this,'q1text')">🎙 AUFNAHME STARTEN</button>
+                </div>
+              </div>
+              <div class="leitfrage">
+                <div class="leitfrage-header">LEITFRAGEN SEK. I<br><span style="color:var(--text-dim)">(Verschoben nach Sek. II)</span></div>
+                <div class="leitfrage-q">Frage 2: Wo willst du Praktikum machen?</div>
+                <textarea placeholder="Notizen..." id="q2text" rows="3"></textarea>
+                <div style="margin-top:8px;">
+                  <button class="btn btn-primary" style="width:100%" onclick="addNote('q2text')">+ ANMERKUNG HINZUFÜGEN</button>
+                </div>
+              </div>
+              <div class="leitfrage">
+                <div class="leitfrage-header">LEITFRAGEN SEK. I<br><span style="color:var(--text-dim)">(Verschoben nach Sek. II)</span></div>
+                <div class="leitfrage-q">Frage 3: Studium oder Ausbildung?</div>
+                <textarea placeholder="Notizen..." id="q3text" rows="3"></textarea>
+                <div style="margin-top:8px;">
+                  <button class="btn btn-ghost" style="width:100%">+ WEITERE FRAGE</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Checkliste -->
+          <div class="card">
+            <div class="card-title">SITUATIONALE ANPASSUNG <span>– CHECKLISTEN</span></div>
+            <div class="g2">
+              <div>
+                <div class="check-item"><input type="checkbox"> Hat Lebenslauf</div>
+                <div class="check-item"><input type="checkbox"> Lebenslauf veraltet</div>
+                <div class="check-item"><input type="checkbox"> Motivationsschreiben fehlt</div>
+              </div>
+              <div>
+                <div class="check-item"><input type="checkbox"> Interessen unklar</div>
+                <div class="check-item"><input type="checkbox"> Stärken unklar</div>
+                <div class="check-item"><input type="checkbox"> Fördermittel-Bedarf</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT: SPoT Protokoll -->
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <div class="card">
+            <div class="card-title">SPoT-PROTOKOLL <span>– SYNTHESE</span></div>
+            <div style="margin-bottom:8px;">
+              <div class="badge badge-green" style="margin-bottom:6px;">ACTIVE PHASE</div>
+              <div style="font-family:var(--mono);font-size:9px;color:var(--text-secondary);margin-bottom:4px;">Phasen-Protokoll: Erarbeitung</div>
+            </div>
+            <div style="font-family:var(--mono);font-size:9px;color:var(--text-dim);margin-bottom:4px;">[Leitfrage 2:]</div>
+            <div style="font-family:var(--mono);font-size:10px;color:var(--text-primary);margin-bottom:10px;">Wo willst du Praktikum machen? (Daimler)</div>
+            <div style="font-family:var(--mono);font-size:9px;color:var(--text-dim);margin-bottom:4px;">[Interessen Tags:]</div>
+            <div style="display:flex;gap:4px;flex-wrap:wrap;">
+              <div class="badge badge-green">TECHNIK</div>
+              <div class="badge badge-orange">HANDWERK</div>
+            </div>
+            <div class="divider"></div>
+            <div style="font-family:var(--mono);font-size:9px;color:var(--text-dim);margin-bottom:4px;">DREIFALTIGKEITS-FUSION</div>
+            <div class="g3" style="gap:6px;">
+              <div class="fusion-item active">
+                <div class="fusion-icon">◉</div>
+                <div class="fusion-label">SPoT<br>Profile</div>
+              </div>
+              <div class="fusion-item active">
+                <div class="fusion-icon">◈</div>
+                <div class="fusion-label">Live Web<br>Database</div>
+              </div>
+              <div class="fusion-item" style="opacity:0.4;">
+                <div class="fusion-icon">◎</div>
+                <div class="fusion-label">Klienten-<br>Altdoks</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">API-STATUS <span>– HOOKS</span></div>
+            <div style="display:flex;flex-direction:column;gap:6px;">
+              <div class="pipe-step">
+                <div class="pipe-dot" style="background:var(--green);box-shadow:0 0 4px var(--green)"></div>
+                <span style="font-family:var(--mono);font-size:9px;color:var(--text-secondary);">Whisper STT</span>
+                <span class="badge badge-green" style="margin-left:auto;">BEREIT</span>
+              </div>
+              <div class="pipe-step">
+                <div class="pipe-dot" style="background:var(--orange)"></div>
+                <span style="font-family:var(--mono);font-size:9px;color:var(--text-secondary);">Ollama / Gemma2</span>
+                <span class="badge badge-orange" style="margin-left:auto;">OFFLINE</span>
+              </div>
+              <div class="pipe-step">
+                <div class="pipe-dot" style="background:var(--orange)"></div>
+                <span style="font-family:var(--mono);font-size:9px;color:var(--text-secondary);">ChromaDB RAG</span>
+                <span class="badge badge-orange" style="margin-left:auto;">OFFLINE</span>
+              </div>
+              <div class="pipe-step">
+                <div class="pipe-dot" style="background:var(--green);box-shadow:0 0 4px var(--green)"></div>
+                <span style="font-family:var(--mono);font-size:9px;color:var(--text-secondary);">Anthropic API</span>
+                <span class="badge badge-green" style="margin-left:auto;">AKTIV</span>
+              </div>
+              <div class="pipe-step">
+                <div class="pipe-dot" style="background:var(--text-dim)"></div>
+                <span style="font-family:var(--mono);font-size:9px;color:var(--text-secondary);">SearXNG Web</span>
+                <span class="badge badge-red" style="margin-left:auto;">OFFLINE</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════════════════════
+           SCREEN 2: CLIENT PROFILE
+      ═══════════════════════════════════════════════ -->
+      <div class="screen" id="screen-clientprofile" style="grid-template-columns:1fr 1fr 1fr; align-items:start;">
+
+        <!-- Stammdaten -->
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <div class="card">
+            <div class="card-title">STAMMDATEN <span>– HARD FACTS (AKTUELL)</span></div>
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              <div><label>Name</label><input type="text" value="Justin Schmidt"></div>
+              <div style="display:flex;gap:8px;">
+                <div style="flex:1;"><label>Alter</label>
+                  <div style="display:flex;gap:6px;align-items:center;">
+                    <input type="number" value="16">
+                    <div class="mic-btn" onclick="toggleMic(this)" title="RECORD QUICK-NOTE">🎙</div>
+                  </div>
+                </div>
+              </div>
+              <div><label>School / Class</label><input type="text" value="Realschule, Kl. 10"></div>
+              <div><label>Target Group</label><input type="text" value="Sek. I (Realschule)"></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">HISTORIE <span>– VERGANGENE SITZUNGEN</span></div>
+            <div class="file-row">
+              <div class="file-icon">📄</div>
+              <div>
+                <div class="file-name">[PDF] 15.01.2024: Praktikum</div>
+                <div class="file-meta badge badge-green">Completed</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:6px;margin-bottom:10px;">
+              <button class="btn btn-ghost" style="flex:1;font-size:9px;">↗ OPEN</button>
+            </div>
+            <div class="file-row">
+              <div class="file-icon">📄</div>
+              <div>
+                <div class="file-name">[PDF] 01.12.2023: Berufsfindung</div>
+                <div class="file-meta badge badge-green">Completed</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:6px;">
+              <button class="btn btn-ghost" style="flex:1;font-size:9px;">↗ OPEN</button>
+              <button class="btn btn-primary" style="flex:1;font-size:9px;">⬇ PORTFOLIO</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Klienten-Altdokumente -->
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <div class="card">
+            <div class="card-title">KLIENTEN-ALTDOKUMENTE <span>– INPUT FÜR VIERFALTIGKEIT</span></div>
+            <div class="drop-zone" id="clientDropZone">
+              <div class="drop-zone-icon">⬆</div>
+              <div class="drop-zone-text">DOKUMENTE HIERHIN ZIEHEN<br>(PDF, JPG, DOCX – LOKAL)</div>
+            </div>
+            <input type="file" id="clientFileInput" multiple accept=".pdf,.jpg,.jpeg,.png,.docx" style="display:none" onchange="handleClientUpload(this.files)">
+            <button class="btn btn-ghost" style="width:100%;margin-top:8px;font-size:9px;" onclick="document.getElementById('clientFileInput').click()">
+              📁 DATEI WÄHLEN
+            </button>
+            <div class="divider"></div>
+            <div class="card-title">DOKUMENTE</div>
+            <div id="docList">
+              <div class="file-row">
+                <div class="file-icon">📋</div>
+                <div style="flex:1;">
+                  <div class="file-name">[PDF] Lebenslauf_Just_2023.pdf</div>
+                  <div class="badge badge-green" style="margin-top:3px;">[GREEN] Indiziert & Verarbeitet</div>
+                </div>
+              </div>
+              <div class="file-row">
+                <div class="file-icon">📋</div>
+                <div style="flex:1;">
+                  <div class="file-name">[PDF] Zeugnis_Realschule_10_I.pdf</div>
+                  <div class="badge badge-green" style="margin-top:3px;">[GREEN] Indiziert & Verarbeitet</div>
+                </div>
+              </div>
+              <div class="file-row">
+                <div class="file-icon">🖼</div>
+                <div style="flex:1;">
+                  <div class="file-name">[JPG] Zertifikat_ComputerKurs.jpg</div>
+                  <div class="badge badge-orange" style="margin-top:3px;">[ORANGE] In Bearbeitung</div>
+                </div>
+              </div>
+            </div>
+            <div style="font-family:var(--mono);font-size:9px;color:var(--text-dim);margin:8px 0 6px;">[INDIVIDUAL DOCUMENT]</div>
+            <div style="display:flex;gap:6px;">
+              <button class="btn btn-green" style="font-size:9px;" onclick="clientDocAction('process')">✓ Verarbeiten</button>
+              <button class="btn btn-red" style="font-size:9px;" onclick="clientDocAction('delete')">🗑 Löschen</button>
+              <button class="btn btn-ghost" style="font-size:9px;" onclick="clientDocAction('preview')">👁 Vorschau</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- SPoT Protokoll & Fusion -->
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <div class="card">
+            <div class="card-title">SPoT-PROTOKOLL <span>– SYNTHESE-ÜBERSICHT</span></div>
+            <div class="badge badge-green" style="margin-bottom:8px;">ACTIVE PHASE</div>
+            <div style="font-family:var(--mono);font-size:9px;color:var(--text-secondary);margin-bottom:4px;">Phasen-Protokoll: Erarbeitung</div>
+            <div style="font-family:var(--mono);font-size:9px;color:var(--text-dim);margin-bottom:2px;">[ Leitfrage 2:]</div>
+            <div style="font-family:var(--mono);font-size:10px;color:var(--text-primary);margin-bottom:10px;">Wo willst du Praktikum machen? (Daimler)</div>
+            <div style="font-family:var(--mono);font-size:9px;color:var(--text-dim);margin-bottom:6px;">[Interessen Tags:]</div>
+            <div style="display:flex;gap:4px;">
+              <div class="badge badge-green">TECHNIK</div>
+              <div class="badge badge-orange">HANDWERK</div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">DREIFALTIGKEITS-FUSION</div>
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              <div style="display:flex;gap:8px;">
+                <div class="fusion-item active" style="flex:1;">
+                  <div class="fusion-icon">◉</div>
+                  <div class="fusion-label">SPOT<br>Profile</div>
+                  <div class="dot-green"></div>
+                </div>
+                <div class="fusion-item active" style="flex:1;">
+                  <div class="fusion-icon">◈</div>
+                  <div class="fusion-label">Live Web<br>Database</div>
+                  <div class="dot-green"></div>
+                </div>
+                <div class="fusion-item active" style="flex:1;border-color:var(--green);">
+                  <div class="fusion-icon">◎</div>
+                  <div class="fusion-label">Klienten-<br>Altdoks</div>
+                  <div class="badge badge-green" style="font-size:8px;">GRÜN</div>
+                </div>
+              </div>
+              <div style="text-align:center;font-family:var(--mono);font-size:10px;color:var(--text-dim);">↓</div>
+              <div class="fusion-item active" style="flex-direction:row;gap:12px;">
+                <div class="fusion-icon">📄</div>
+                <div style="text-align:left;">
+                  <div class="fusion-label">[PDF] Bewerbermappe template</div>
+                  <div class="badge badge-green" style="margin-top:4px;">BEREIT</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <button class="btn btn-green" style="width:100%;padding:12px;" onclick="showToast('Vierfaltigkeits-Index wird generiert...')">
+            ⚡ VIERFALTIGKEITS-INDEX GENERIEREN
+          </button>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════════════════════
+           SCREEN 3: PDF KNOWLEDGE BASE
+      ═══════════════════════════════════════════════ -->
+      <div class="screen" id="screen-pdfknowledge" style="grid-template-columns:2.5fr 1fr; align-items:start;">
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <div class="card">
+            <div class="card-title">PDF KNOWLEDGE BASE <span>– LOCAL RAG INDEX</span></div>
+            <div class="drop-zone" id="kbDropZone" style="margin-bottom:12px;">
+              <div class="drop-zone-icon">📚</div>
+              <div class="drop-zone-text">NEUE PDFs HIERHIN ZIEHEN (MAX 500 FILES)<br>
+                <span style="color:var(--text-dim);font-size:9px;">PDF, TXT, DOCX werden akzeptiert</span>
+              </div>
+            </div>
+            <input type="file" id="kbFileInput" multiple accept=".pdf,.txt,.docx" style="display:none" onchange="handleKBUpload(this.files)">
+            <button class="btn btn-primary" style="width:100%;margin-bottom:12px;" onclick="document.getElementById('kbFileInput').click()">
+              📁 LOKALER IMPORT (DATEIEN WÄHLEN)
+            </button>
+            <div style="font-family:var(--mono);font-size:9px;color:var(--text-dim);text-align:center;margin-bottom:12px;">
+              Daten verbleiben lokal im Browser (localStorage)
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title" style="justify-content:space-between;">
+              DOKUMENTEN-LISTE <span>– INDEXIERT</span>
+              <div style="font-size:16px;cursor:pointer;">⋮</div>
+            </div>
+            <div class="table-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Dateiname</th>
+                    <th>Kategorie</th>
+                    <th>Größe</th>
+                    <th>Index-Status</th>
+                    <th>Letzter Check</th>
+                  </tr>
+                </thead>
+                <tbody id="pdfTable">
+                  <tr><td>Regionalschrift_Stuttgart.pdf</td><td style="color:var(--text-dim)">Regionalschrift</td><td>50.1 MB</td><td><span class="badge badge-green">✓ Indiziert</span></td><td>01.03.</td></tr>
+                  <tr><td>Schulverzeichnis_BW.pdf</td><td style="color:var(--text-dim)">Schulverzeichnis</td><td>31.9 MB</td><td><span class="badge badge-green">✓ Indiziert</span></td><td>01.03.</td></tr>
+                  <tr><td>Fristen_Ausbildung_2024.pdf</td><td style="color:var(--text-dim)">Fristen</td><td>37.3 MB</td><td><span class="badge badge-orange">! In Bearbeitung</span></td><td>Jetzt</td></tr>
+                  <tr><td>Fristen_Regnes.pdf</td><td style="color:var(--text-dim)">Fristen</td><td>44.1 MB</td><td><span class="badge badge-orange">! In Bearbeitung</span></td><td>Jetzt</td></tr>
+                  <tr><td>Regionalschrift_BIW.pdf</td><td style="color:var(--text-dim)">Regionalschrift</td><td>36.0 MB</td><td><span class="badge badge-green">✓ Indiziert</span></td><td>01.03.</td></tr>
+                  <tr><td>Fristen_Ausbildung_2024.pdf</td><td style="color:var(--text-dim)">Schulverzeichnis</td><td>66.0 MB</td><td><span class="badge badge-orange">! In Bearbeitung</span></td><td>Jetzt</td></tr>
+                  <tr><td>Regionalschrift_Stuttgart_v2.pdf</td><td style="color:var(--text-dim)">Regionalschrift</td><td>39.8 MB</td><td><span class="badge badge-green">✓ Indiziert</span></td><td>01.03.</td></tr>
+                  <tr><td>Ausbildungsberufe_2024.pdf</td><td style="color:var(--text-dim)">Berufe</td><td>22.4 MB</td><td><span class="badge badge-green">✓ Indiziert</span></td><td>28.02.</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div style="display:flex;gap:6px;margin-top:10px;">
+              <button class="btn btn-green" style="font-size:9px;" onclick="kbAction('index')">✓ Indizieren</button>
+              <button class="btn btn-red" style="font-size:9px;" onclick="kbAction('delete')">🗑 Löschen</button>
+              <button class="btn btn-ghost" style="font-size:9px;" onclick="kbAction('preview')">👁 Vorschau</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT: Stats -->
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <div class="card" style="text-align:center;">
+            <div class="card-title" style="justify-content:center;">VEKTORDATENBANK<br><span>(CHROMA DB) STATUS</span></div>
+            <div class="ring-wrap" style="margin:16px auto;">
+              <svg width="120" height="120" viewBox="0 0 120 120">
+                <circle cx="60" cy="60" r="50" fill="none" stroke="var(--border)" stroke-width="8"/>
+                <circle cx="60" cy="60" r="50" fill="none" stroke="var(--green)" stroke-width="8"
+                  stroke-dasharray="285" stroke-dashoffset="14" stroke-linecap="round"
+                  transform="rotate(-90 60 60)" style="filter:drop-shadow(0 0 4px var(--green))"/>
+              </svg>
+              <div class="ring-label">
+                <div class="ring-pct">95%</div>
+                <div class="ring-sub">GESAMT-INDEX<br>STATUS</div>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:6px;text-align:left;">
+              <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:9px;">
+                <span style="color:var(--text-dim);">ℹ Indizierte PDFs:</span>
+                <span style="color:var(--text-primary);" class="sys-stat">475 / 500</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:9px;">
+                <span style="color:var(--text-dim);">ℹ Vektor-Einträge (RAG):</span>
+                <span style="color:var(--text-primary);" class="sys-stat">1.2M</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:9px;">
+                <span style="color:var(--text-dim);">💾 Speicherbedarf:</span>
+                <span style="color:var(--text-primary);" class="sys-stat">2.1 GB</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">VIERFALTIGKEIT-FUSION <span>STATUS</span></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+              <div class="fusion-item active"><div class="fusion-icon">◉</div><div class="fusion-label">SPOT Profile</div></div>
+              <div class="fusion-item active"><div class="fusion-icon">◈</div><div class="fusion-label">PDF Database</div></div>
+              <div class="fusion-item active"><div class="fusion-icon">🌐</div><div class="fusion-label">Live Web Search</div></div>
+              <div class="fusion-item active" style="position:relative;">
+                <div style="position:absolute;top:-6px;right:-6px;background:var(--green);color:#000;font-family:var(--mono);font-size:7px;font-weight:700;padding:2px 4px;border-radius:2px;">NEU</div>
+                <div class="fusion-icon">◎</div><div class="fusion-label">Klienten-Altdoks</div>
+              </div>
+            </div>
+            <div style="margin-top:8px;padding:6px;background:var(--green-glow);border:1px solid rgba(0,230,118,0.3);border-radius:4px;font-family:var(--mono);font-size:9px;color:var(--green);text-align:center;">
+              KI-ZUGRIFF: AKTIV & OPTIMIERT
+            </div>
+          </div>
+
+          <button class="btn btn-green" style="width:100%;padding:12px;" onclick="kbAction('index')">
+            🔄 INDEX AKTUALISIEREN & SYNCHRONISIEREN
+          </button>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════════════════════
+           SCREEN 4: POST-PROCESSING
+      ═══════════════════════════════════════════════ -->
+      <div class="screen" id="screen-postprocessing" style="grid-template-columns:1fr 1.2fr 1fr; align-items:start;">
+
+        <!-- LEFT: Sitzungs-Analyse -->
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <div class="card">
+            <div class="card-title">SITZUNGS-ANALYSE <span>(27B GEMMA 2)</span></div>
+            <!-- Video placeholder -->
+            <div style="background:var(--bg-base);border:1px solid var(--border);border-radius:4px;height:90px;display:flex;align-items:center;justify-content:center;margin-bottom:10px;position:relative;">
+              <div style="font-size:28px;opacity:0.3;">▶</div>
+              <div style="position:absolute;bottom:6px;left:8px;font-family:var(--mono);font-size:8px;color:var(--text-dim);">FULL WHISPER TRANSCRIPT (SPRECHER-GE...)</div>
+              <div style="position:absolute;bottom:6px;right:8px;font-size:14px;cursor:pointer;color:var(--text-secondary);">⛶</div>
+            </div>
+            <select style="margin-bottom:10px;font-size:9px;">
+              <option>Full, Whisper Transcript – Ereiohilation</option>
+            </select>
+            <div class="card-title">QUALITÄTS-CHECK & KONSISTENZ</div>
+            <div style="display:flex;flex-direction:column;gap:6px;">
+              <div style="display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:10px;">
+                <span style="color:var(--green);">✓</span>
+                <span>Konsistenz mit SPoT Protokoll:</span>
+                <span style="color:var(--green);font-weight:700;margin-left:auto;">98%</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:10px;">
+                <span style="color:var(--orange);">⚠</span>
+                <span style="color:var(--text-secondary);">Methodik (Galuske): 2 widersprüchliche Aussagen gefunden</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card" style="writing-mode:horizontal-tb;">
+            <div class="card-title">ANALYSE-SCHLEIFEN</div>
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              <div class="pipe-step">
+                <div class="pipe-dot" style="background:var(--green)"></div>
+                <div style="flex:1;">
+                  <div style="font-family:var(--mono);font-size:10px;">Whisper</div>
+                </div>
+                <span class="badge badge-green">COMPLETED</span>
+              </div>
+              <div class="pipe-step">
+                <div class="pipe-dot" style="background:var(--green)"></div>
+                <div style="flex:1;"><div style="font-family:var(--mono);font-size:10px;">Data Fusion</div></div>
+                <span class="badge badge-green">COMPLETED</span>
+              </div>
+              <div class="pipe-step">
+                <div class="pipe-dot" style="background:var(--orange);animation:pulse 1.5s infinite"></div>
+                <div style="flex:1;"><div style="font-family:var(--mono);font-size:10px;">Coaching Feedback</div></div>
+                <span class="badge badge-orange">IN PROGRESS</span>
+              </div>
+              <div class="pipe-step">
+                <div class="pipe-dot" style="background:var(--orange);animation:pulse 1.5s infinite"></div>
+                <div style="flex:1;"><div style="font-family:var(--mono);font-size:10px;">Web Research</div></div>
+                <span class="badge badge-orange">IN PROGRESS</span>
+              </div>
+              <div class="pipe-step">
+                <div class="pipe-dot" style="background:var(--text-dim)"></div>
+                <div style="flex:1;"><div style="font-family:var(--mono);font-size:10px;">Dokumentensynthese</div></div>
+                <span class="badge" style="background:rgba(255,255,255,0.05);color:var(--text-dim);border-color:var(--border);">PENDING</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CENTER: Validierung -->
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <div class="card">
+            <div class="card-title" style="justify-content:space-between;">
+              VALIDIERUNG & ERGÄNZUNG <span>(BERATER-CHECK)</span>
+              <div style="font-size:16px;cursor:pointer;color:var(--text-dim);">⋮</div>
+            </div>
+            <div style="font-family:var(--mono);font-size:9px;color:var(--text-dim);margin-bottom:10px;">KI-VORSCHLÄGE ZUM PROTOKOLL (SPOK)</div>
+
+            <div class="ai-suggestion">
+              <div class="ai-suggestion-header">
+                <span style="color:var(--green);">▶</span> [ADD] KI-Vorschlag
+              </div>
+              <div class="ai-suggestion-body">Klient erwähnte "Praktikum bei Bosch" (Minute 12)</div>
+              <div class="suggestion-actions">
+                <button class="btn btn-green" style="flex:1;font-size:9px;" onclick="acceptSuggestion(this)">✓ ÜBERNEHMEN</button>
+                <button class="btn btn-red" style="flex:1;font-size:9px;" onclick="rejectSuggestion(this)">✗ IGNORIEREN</button>
+              </div>
+            </div>
+
+            <div class="ai-suggestion" style="border-left-color:var(--orange);">
+              <div class="ai-suggestion-header" style="color:var(--orange);">
+                <span>⚡</span> [CORRECT] KI-Korrektur
+              </div>
+              <div class="ai-suggestion-body">Wunschtermin für Anmeldung ist Mai, nicht Juni</div>
+              <div class="suggestion-actions">
+                <button class="btn btn-green" style="flex:1;font-size:9px;" onclick="acceptSuggestion(this)">✓ ÜBERNEHMEN</button>
+                <button class="btn btn-red" style="flex:1;font-size:9px;" onclick="rejectSuggestion(this)">✗ IGNORIEREN</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">METHODIK-COACHING-LOG</div>
+            <div style="background:var(--bg-base);border:1px solid var(--border);border-radius:4px;padding:10px;font-family:var(--mono);font-size:10px;color:var(--text-secondary);line-height:1.7;">
+              Berater sprach 70% der Zeit (Ziel: &lt;50%)<br>
+              <span style="color:var(--orange);">⚠</span> Empfehlung: Offenere Fragen stellen
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">KLIENTEN-ALTDOKUMENTE <span>(INPUT)</span></div>
+            <div class="file-row"><div class="file-icon">📋</div><div class="file-name">Lebenslauf_Just_2023.pdf</div></div>
+            <div class="file-row"><div class="file-icon">📋</div><div class="file-name">Zeugnis_Realschule.pdf</div></div>
+            <div class="badge badge-green" style="margin-top:6px;">[GREEN] Indiziert & Verarbeitet</div>
+          </div>
+        </div>
+
+        <!-- RIGHT: Dokumente-Fabrik -->
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <div class="card">
+            <div class="card-title">DOKUMENTEN-FABRIK & RECHERCHE</div>
+            <div style="font-family:var(--mono);font-size:9px;color:var(--text-dim);margin-bottom:8px;">VIERFALTIGKEITS-FUSION STATUS</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:4px;margin-bottom:10px;">
+              <div class="fusion-item active" style="padding:6px;">
+                <div style="font-size:16px;">◉</div>
+                <div class="fusion-label" style="font-size:8px;">SPoT<br>Profile</div>
+              </div>
+              <div class="fusion-item active" style="padding:6px;">
+                <div style="font-size:16px;">📄</div>
+                <div class="fusion-label" style="font-size:8px;">PDF<br>Database</div>
+              </div>
+              <div class="fusion-item active" style="padding:6px;">
+                <div style="font-size:16px;">🌐</div>
+                <div class="fusion-label" style="font-size:8px;">Live Web<br>Search</div>
+              </div>
+              <div class="fusion-item active" style="padding:6px;position:relative;">
+                <div style="position:absolute;top:-5px;right:-5px;background:var(--green);color:#000;font-size:7px;font-weight:700;padding:1px 3px;border-radius:2px;">NEU</div>
+                <div style="font-size:16px;">◎</div>
+                <div class="fusion-label" style="font-size:8px;">Klienten-<br>Altdoks</div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;padding:6px 8px;background:var(--green-glow);border:1px solid rgba(0,230,118,0.3);border-radius:4px;margin-bottom:10px;">
+              <div class="dot-green"></div>
+              <span style="font-family:var(--mono);font-size:9px;color:var(--green);">MATCHING: 92% (Hohe Konvergenz)</span>
+            </div>
+            <div class="divider"></div>
+            <div class="card-title" style="margin-top:8px;">AUTOMATISCHE DOKUMENTEN-SYNTHESE</div>
+            <div style="display:flex;gap:8px;margin-bottom:10px;">
+              <div class="fusion-item" style="flex:1;padding:8px;">
+                <div style="font-size:16px;">📄</div>
+                <div class="fusion-label">Bewerbermapper</div>
+              </div>
+              <div class="fusion-item" style="flex:1;padding:8px;">
+                <div style="font-size:16px;">📄</div>
+                <div class="fusion-label">Handout</div>
+              </div>
+              <div class="fusion-item" style="flex:1;padding:8px;">
+                <div style="font-size:16px;">📝</div>
+                <div class="fusion-label">Motivations-schreiben</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:6px;">
+              <button class="btn btn-green" style="flex:1;font-size:9px;" onclick="showToast('Dokumente werden generiert...')">⚡ GENERIEREN</button>
+              <button class="btn btn-ghost" style="flex:1;font-size:9px;" onclick="showToast('Vorschau öffnet sich...')">👁 VORSCHAU</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">WEB-RECHERCHE ERGEBNISSE <span>(AGENTISCH)</span></div>
+            <div style="font-family:var(--mono);font-size:10px;color:var(--text-secondary);line-height:1.8;">
+              • 3 freie Plätze "KFZ-Mechatroniker" im Umkreis 10km (IHK Börse)<br>
+              • Bewerbungsfrist Hochschule X verlängert bis 15.07.
+            </div>
+            <button class="btn btn-ghost" style="width:100%;margin-top:8px;font-size:9px;" onclick="showToast('Web-Suche wird aktualisiert...')">🔄 SUCHE AKTUALISIEREN</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════════════════════
+           SCREEN 5: REPORTS
+      ═══════════════════════════════════════════════ -->
+      <div class="screen" id="screen-reports" style="grid-template-columns:1.5fr 1fr; align-items:start;">
+
+        <!-- LEFT -->
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <div class="card">
+            <div class="card-title" style="justify-content:space-between;">
+              BERATUNGS-STATISTIK <span>(ANZAHL & SEGMENTIERUNG)</span>
+            </div>
+            <div class="g2" style="align-items:start;">
+              <div>
+                <div style="font-family:var(--mono);font-size:9px;color:var(--text-dim);margin-bottom:8px;">Klienten nach Schulform</div>
+                <div class="bar-wrap">
+                  <div class="bar-col">
+                    <div class="bar" style="height:65%;background:var(--border-bright);"></div>
+                    <div class="bar-label">Gymn.</div>
+                  </div>
+                  <div class="bar-col">
+                    <div class="bar" style="height:55%;background:var(--green);opacity:0.8;"></div>
+                    <div class="bar-label">Realsch.</div>
+                  </div>
+                  <div class="bar-col">
+                    <div class="bar" style="height:30%;background:var(--border-bright);"></div>
+                    <div class="bar-label">Hauptsch.</div>
+                  </div>
+                  <div class="bar-col">
+                    <div class="bar" style="height:15%;background:var(--border-bright);"></div>
+                    <div class="bar-label">Wechsler</div>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <div style="font-family:var(--mono);font-size:9px;color:var(--text-dim);margin-bottom:8px;">Status</div>
+                <div style="position:relative;width:80px;height:80px;margin:0 auto;">
+                  <svg viewBox="0 0 80 80" width="80" height="80">
+                    <circle cx="40" cy="40" r="30" fill="none" stroke="var(--green)" stroke-width="12" stroke-dasharray="188" stroke-dashoffset="0" transform="rotate(-90 40 40)"/>
+                    <circle cx="40" cy="40" r="30" fill="none" stroke="var(--blue)" stroke-width="12" stroke-dasharray="188" stroke-dashoffset="150" transform="rotate(-90 40 40)"/>
+                    <circle cx="40" cy="40" r="30" fill="none" stroke="var(--border-bright)" stroke-width="12" stroke-dasharray="188" stroke-dashoffset="170" transform="rotate(-90 40 40)"/>
+                  </svg>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:3px;margin-top:6px;">
+                  <div style="display:flex;align-items:center;gap:4px;font-family:var(--mono);font-size:8px;color:var(--text-dim);">
+                    <div style="width:8px;height:8px;border-radius:2px;background:var(--green)"></div> Active
+                  </div>
+                  <div style="display:flex;align-items:center;gap:4px;font-family:var(--mono);font-size:8px;color:var(--text-dim);">
+                    <div style="width:8px;height:8px;border-radius:2px;background:var(--blue)"></div> Post-Processing
+                  </div>
+                  <div style="display:flex;align-items:center;gap:4px;font-family:var(--mono);font-size:8px;color:var(--text-dim);">
+                    <div style="width:8px;height:8px;border-radius:2px;background:var(--border-bright)"></div> Completed
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="divider"></div>
+            <div style="font-family:var(--mono);font-size:9px;color:var(--text-dim);margin-bottom:8px;">Beratungsstunden (wöchentlich)</div>
+            <div class="sparkline">
+              <div class="spark-bar" style="height:50%"></div>
+              <div class="spark-bar" style="height:60%"></div>
+              <div class="spark-bar" style="height:55%"></div>
+              <div class="spark-bar" style="height:90%"></div>
+              <div class="spark-bar" style="height:75%"></div>
+              <div class="spark-bar" style="height:100%"></div>
+              <div class="spark-bar" style="height:45%"></div>
+              <div class="spark-bar" style="height:55%"></div>
+              <div class="spark-bar" style="height:65%"></div>
+              <div class="spark-bar" style="height:90%"></div>
+              <div class="spark-bar" style="height:80%"></div>
+              <div class="spark-bar" style="height:95%"></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">DOCUMENT OUTPUT COUNTER <span>(LEISTUNGSNACHWEIS)</span></div>
+            <div style="display:flex;gap:10px;margin-bottom:12px;">
+              <div class="fusion-item active" style="flex:1;">
+                <div class="fusion-icon">📄</div>
+                <div class="fusion-label">Bewerbermappen</div>
+                <div class="fusion-pct">125</div>
+                <div style="font-family:var(--mono);font-size:8px;color:var(--text-dim);">Avg: 9.2/10</div>
+              </div>
+              <div class="fusion-item" style="flex:1;border-color:var(--orange);">
+                <div class="fusion-icon">📄</div>
+                <div class="fusion-label">Handouts</div>
+                <div class="fusion-pct" style="color:var(--orange);">80</div>
+                <div style="font-family:var(--mono);font-size:8px;color:var(--text-dim);">Avg: 9.5/10</div>
+              </div>
+              <div class="fusion-item active" style="flex:1;">
+                <div class="fusion-icon">📝</div>
+                <div class="fusion-label">Motivations-schreiben</div>
+                <div class="fusion-pct">110</div>
+                <div style="font-family:var(--mono);font-size:8px;color:var(--text-dim);">Avg: 9.0/10</div>
+              </div>
+              <div style="flex:1;">
+                <div class="card-title" style="font-size:8px;margin-bottom:6px;">Zuletzt erstellte Berichte</div>
+                <div class="table-scroll">
+                  <table>
+                    <tr><td style="font-size:9px;padding:4px 6px;">Gymnasium</td><td style="font-size:8px;color:var(--text-dim);padding:4px 6px;">15.01.2024</td></tr>
+                    <tr><td style="font-size:9px;padding:4px 6px;">Justin Schmidt</td><td style="font-size:8px;color:var(--text-dim);padding:4px 6px;">15.01.2024</td></tr>
+                    <tr><td style="font-size:9px;padding:4px 6px;">Realschule</td><td style="font-size:8px;color:var(--text-dim);padding:4px 6px;">01.01.2024</td></tr>
+                    <tr><td style="font-size:9px;padding:4px 6px;">Justin Schmidt</td><td style="font-size:8px;color:var(--text-dim);padding:4px 6px;">01.12.2023</td></tr>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT -->
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <div class="card" style="text-align:center;">
+            <div class="card-title" style="justify-content:space-between;">
+              QUAD-FUSION SUCCESS RATE <span>(QUALITÄT-CHECK)</span>
+            </div>
+            <div style="font-family:var(--mono);font-size:9px;color:var(--text-dim);margin-bottom:8px;">VIERFALTIGKEIT (QUAD-FUSION)</div>
+            <div class="ring-wrap" style="margin:0 auto 12px;">
+              <svg width="110" height="110" viewBox="0 0 110 110">
+                <circle cx="55" cy="55" r="46" fill="none" stroke="var(--border)" stroke-width="8"/>
+                <circle cx="55" cy="55" r="46" fill="none" stroke="var(--green)" stroke-width="8"
+                  stroke-dasharray="289" stroke-dashoffset="17" stroke-linecap="round"
+                  transform="rotate(-90 55 55)" style="filter:drop-shadow(0 0 6px var(--green))"/>
+              </svg>
+              <div class="ring-label">
+                <div class="ring-pct">94%</div>
+                <div class="ring-sub">EFFIZIENZ-<br>INDEX</div>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:6px;text-align:left;">
+              <div style="display:flex;justify-content:space-between;align-items:center;font-family:var(--mono);font-size:9px;">
+                <span>◉ SPoT Profile</span><span class="badge badge-green">98% Complete</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;font-family:var(--mono);font-size:9px;">
+                <span>◈ PDF Database</span><span class="badge badge-green">100% Index</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;font-family:var(--mono);font-size:9px;">
+                <span>🌐 Live Web Search</span><span class="badge badge-blue">91% Fresh</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;font-family:var(--mono);font-size:9px;">
+                <span>◎ Klienten-Altdoks</span><span class="badge badge-orange">90% Indiziert</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">METHODIK-TREND <span>(GALUSKE-CHECK / ANONYMISIERT)</span></div>
+            <!-- Radar chart via SVG -->
+            <svg viewBox="0 0 200 180" width="100%" style="display:block;">
+              <defs>
+                <filter id="glow"><feGaussianBlur stdDeviation="2" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+              </defs>
+              <!-- Grid -->
+              <polygon points="100,20 170,65 150,145 50,145 30,65" fill="none" stroke="var(--border)" stroke-width="1"/>
+              <polygon points="100,40 152,73 136,130 64,130 48,73" fill="none" stroke="var(--border)" stroke-width="1"/>
+              <polygon points="100,60 134,81 122,115 78,115 66,81" fill="none" stroke="var(--border)" stroke-width="1"/>
+              <!-- Axes -->
+              <line x1="100" y1="20" x2="100" y2="145" stroke="var(--border)" stroke-width="1"/>
+              <line x1="100" y1="82" x2="170" y2="65" stroke="var(--border)" stroke-width="1"/>
+              <line x1="100" y1="82" x2="150" y2="145" stroke="var(--border)" stroke-width="1"/>
+              <line x1="100" y1="82" x2="50" y2="145" stroke="var(--border)" stroke-width="1"/>
+              <line x1="100" y1="82" x2="30" y2="65" stroke="var(--border)" stroke-width="1"/>
+              <!-- Data -->
+              <polygon points="100,35 158,70 140,135 60,128 42,68"
+                fill="rgba(0,230,118,0.15)" stroke="var(--green)" stroke-width="2" filter="url(#glow)"/>
+              <!-- Labels -->
+              <text x="100" y="14" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="var(--text-dim)">Reverse Engineering</text>
+              <text x="178" y="62" text-anchor="start" font-family="JetBrains Mono" font-size="7" fill="var(--text-dim)">Berater-Sprech-</text>
+              <text x="178" y="71" text-anchor="start" font-family="JetBrains Mono" font-size="7" fill="var(--text-dim)">anteil (&lt;50%)</text>
+              <text x="158" y="155" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="var(--text-dim)">Weichenstellung</text>
+              <text x="42" y="155" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="var(--text-dim)">Erarbeitung</text>
+              <text x="14" y="62" text-anchor="end" font-family="JetBrains Mono" font-size="7" fill="var(--text-dim)">Coaching</text>
+              <text x="14" y="71" text-anchor="end" font-family="JetBrains Mono" font-size="7" fill="var(--text-dim)">Quality</text>
+              <!-- Improvement badge -->
+              <rect x="118" y="90" width="56" height="22" rx="3" fill="rgba(0,230,118,0.2)" stroke="var(--green)" stroke-width="1"/>
+              <text x="146" y="100" text-anchor="middle" font-family="JetBrains Mono" font-size="7" fill="var(--green)" font-weight="700">VERBESSERUNG</text>
+              <text x="146" y="108" text-anchor="middle" font-family="JetBrains Mono" font-size="7" fill="var(--green)">(+0.5 pts)</text>
+            </svg>
+          </div>
+
+          <button class="btn btn-ghost" style="width:100%;padding:12px;font-size:9px;" onclick="showToast('Anonymisierter Bericht wird exportiert...')">
+            📊 DETAIL-BERICHT EXPORTIEREN (ANONYMISIERT)
+          </button>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════════════════════
+           SCREEN 6: SETTINGS
+      ═══════════════════════════════════════════════ -->
+      <div class="screen" id="screen-settings" style="grid-template-columns:1fr 1fr; align-items:start;">
+
+        <!-- LEFT -->
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <div class="card">
+            <div class="card-title">HARDWARE & MODEL CONFIG <span>(MAC MINI M4 32GB)</span></div>
+            <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px;">
+              <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;">
+                <span style="color:var(--text-dim)">[CPU]</span>
+                <span>10 Core &nbsp;<span style="color:var(--green);">12% Load</span></span>
+              </div>
+              <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;">
+                <span style="color:var(--text-dim)">[GPU]</span>
+                <span>16 Core &nbsp;<span style="color:var(--green);">35% Load</span></span>
+              </div>
+              <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;">
+                <span style="color:var(--text-dim)">[RAM]</span>
+                <span>32GB Unified Memory &nbsp;<span style="color:var(--orange);">24.2 GB used</span></span>
+              </div>
+            </div>
+            <div style="font-family:var(--mono);font-size:9px;color:var(--text-dim);margin-bottom:4px;">LOCAL AI MODEL (OLLAMA)</div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+              <span style="font-family:var(--mono);font-size:10px;color:var(--green);">[GREEN] Active & Optimized</span>
+            </div>
+            <select style="margin-bottom:12px;font-size:10px;">
+              <option>[SELECTED] Gemma 2 27B GGUF (6-bit quant)</option>
+              <option>Phi-3 Mini 3.8B (4-bit quant)</option>
+              <option>Mistral 7B (4-bit quant)</option>
+            </select>
+            <div style="font-family:var(--mono);font-size:9px;color:var(--text-dim);margin-bottom:6px;">RAM MANAGEMENT – Model Memory Allocation</div>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <span style="font-family:var(--mono);font-size:9px;color:var(--text-dim);">Min: 16GB</span>
+              <div style="flex:1;position:relative;">
+                <input type="range" min="16" max="28" value="22" style="width:100%;accent-color:var(--green);" oninput="updateRamLabel(this)">
+              </div>
+              <span style="font-family:var(--mono);font-size:9px;color:var(--text-dim);">Max: 28GB</span>
+            </div>
+            <div style="text-align:center;font-family:var(--mono);font-size:10px;color:var(--green);margin-top:4px;" id="ramLabel">22 GB</div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">PATH MANAGEMENT & CLOUD INTERFACE</div>
+            <div style="font-family:var(--mono);font-size:9px;color:var(--text-dim);margin-bottom:8px;">LOKALE PFADE (DOCKER VOLUME)</div>
+            <div style="display:flex;flex-direction:column;gap:6px;">
+              <div>
+                <div style="font-family:var(--mono);font-size:9px;color:var(--text-secondary);margin-bottom:4px;">1.</div>
+                <div style="display:flex;gap:6px;">
+                  <input type="text" value="Knowledge Base PDFs: /data/SPoT/Knowledge_Base/" style="font-size:9px;">
+                  <button class="btn btn-ghost" style="padding:4px 8px;font-size:12px;">📁</button>
+                </div>
+              </div>
+              <div>
+                <div style="font-family:var(--mono);font-size:9px;color:var(--text-secondary);margin-bottom:4px;">2.</div>
+                <div style="display:flex;gap:6px;">
+                  <input type="text" value="Client Altdokumente: /data/SPoT/Client_Docs/" style="font-size:9px;">
+                  <button class="btn btn-ghost" style="padding:4px 8px;font-size:12px;">📁</button>
+                </div>
+              </div>
+              <div>
+                <div style="font-family:var(--mono);font-size:9px;color:var(--text-secondary);margin-bottom:4px;">3.</div>
+                <div style="display:flex;gap:6px;">
+                  <input type="text" value="Output Exports: /data/SPoT/Exports/" style="font-size:9px;">
+                  <button class="btn btn-ghost" style="padding:4px 8px;font-size:12px;">📁</button>
+                </div>
+              </div>
+            </div>
+            <div class="divider"></div>
+            <div style="font-family:var(--mono);font-size:9px;color:var(--text-dim);margin-bottom:4px;">NEXTCLOUD (MANUELLER TRANSFER) LINK</div>
+            <div style="font-family:var(--mono);font-size:8px;color:var(--text-secondary);margin-bottom:4px;">Nextcloud Folder URL</div>
+            <input type="text" placeholder="https://..." style="font-size:9px;">
+          </div>
+        </div>
+
+        <!-- RIGHT -->
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <div class="card">
+            <div class="card-title" style="justify-content:space-between;">
+              WHISPER & SPEECH RECOGNITION <span>(LOCAL STT)</span>
+              <span class="badge badge-green">[GREEN] Active</span>
+            </div>
+            <div style="font-family:var(--mono);font-size:9px;color:var(--text-dim);margin-bottom:4px;">FASTER-WHISPER MODEL</div>
+            <select style="margin-bottom:10px;font-size:10px;">
+              <option>[SELECTED] Large-v3 (6-bit)</option>
+              <option>Medium (8-bit)</option>
+              <option>Small (fp16)</option>
+            </select>
+            <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;">
+              <select style="flex:1;font-size:9px;">
+                <option>🎙 Microphone</option>
+                <option>OBS Virtual Audio</option>
+              </select>
+              <div style="display:flex;gap:2px;">
+                <div style="width:6px;height:16px;background:var(--green);border-radius:1px;"></div>
+                <div style="width:6px;height:22px;background:var(--green);border-radius:1px;"></div>
+                <div style="width:6px;height:12px;background:var(--green);border-radius:1px;"></div>
+                <div style="width:6px;height:18px;background:var(--green);border-radius:1px;"></div>
+                <div style="width:6px;height:8px;background:var(--border-bright);border-radius:1px;"></div>
+                <div style="width:6px;height:14px;background:var(--border-bright);border-radius:1px;"></div>
+                <div style="width:6px;height:6px;background:var(--border-bright);border-radius:1px;"></div>
+                <div style="width:6px;height:10px;background:var(--border-bright);border-radius:1px;"></div>
+              </div>
+            </div>
+            <div class="check-item" style="margin-bottom:6px;">
+              <input type="checkbox" checked> Enable Speaker Diarization (Multi-Track)
+            </div>
+            <div style="font-family:var(--mono);font-size:9px;color:var(--text-secondary);margin-bottom:4px;">Input Source:</div>
+            <select style="font-size:9px;">
+              <option>OBS Multi-Track Audio</option>
+              <option>System Microphone</option>
+            </select>
+          </div>
+
+          <div class="card">
+            <div class="card-title" style="justify-content:space-between;">
+              SYSTEM INTEGRATION & OBS
+            </div>
+            <div style="font-family:var(--mono);font-size:9px;color:var(--text-dim);margin-bottom:4px;">OBS STUDIO INTEGRATION</div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+              <select style="font-size:9px;flex:1;margin-right:8px;"><option>mkv (Multi-Track Audio)</option><option>mp4</option></select>
+              <span class="badge badge-green">⬤ [GREEN] Connected</span>
+            </div>
+            <div class="divider"></div>
+            <div style="font-family:var(--mono);font-size:9px;color:var(--text-dim);margin-bottom:6px;">WEB-SUCHE (LOCAL AGENT)</div>
+            <div style="font-family:var(--mono);font-size:8px;color:var(--text-secondary);margin-bottom:4px;">Search Engine:</div>
+            <select style="margin-bottom:10px;font-size:9px;">
+              <option>SearXNG (Local Docker)</option>
+              <option>DuckDuckGo API</option>
+            </select>
+            <div style="font-family:var(--mono);font-size:8px;color:var(--text-secondary);margin-bottom:6px;">Post-Processing Options</div>
+            <div class="check-item"><input type="checkbox" checked> Full Transcript</div>
+            <div class="check-item"><input type="checkbox" checked> Methodik Check (Galuske)</div>
+            <div class="check-item"><input type="checkbox"> Data Quad-Fusion</div>
+          </div>
+
+          <button class="btn btn-green" style="width:100%;padding:12px;" onclick="showToast('Konfiguration gespeichert. System wird neu gestartet...')">
+            💾 KONFIGURATION SPEICHERN & SYSTEM NEUSTARTEN
+          </button>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+
+    <!-- BOTTOM ACTION BAR -->
+    <div class="bottom-bar" id="bottomBar">
+      <button class="btn btn-ghost" style="padding:10px 20px;font-size:10px;" onclick="saveKlientToBackend()">
+        💾 KLIENT SPEICHERN
+      </button>
+      <button class="btn btn-primary" style="padding:10px 20px;font-size:10px;" onclick="startKIAnalyse('analyse')">
+        ⚡ KI-ANALYSE
+      </button>
+      <button class="btn btn-green" style="padding:10px 32px;font-size:11px;" id="mainCta" onclick="handleMainCta()">
+        SITZUNG BEENDEN & POST-PROCESSING STARTEN
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast" style="
+  position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(80px);
+  background:var(--bg-card2);border:1px solid var(--green);border-radius:6px;
+  padding:10px 20px;font-family:var(--mono);font-size:11px;color:var(--green);
+  transition:transform 0.3s;pointer-events:none;z-index:999;white-space:nowrap;
+" id="toastEl"></div>
+
+<div class="star-corner">✦</div>
+
+<script>
+// ── NAVIGATION ──
+function showScreen(id, el) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('screen-' + id).classList.add('active');
+  el.classList.add('active');
+  updateBottomBar(id);
+}
+
+function updateBottomBar(id) {
+  const bar = document.getElementById('mainCta');
+  const ctaMap = {
+    dashboard: 'SITZUNG BEENDEN & POST-PROCESSING STARTEN',
+    clientprofile: 'VIERFALTIGKEITS-INDEX FÜR DIESEN KLIENTEN GENERIEREN',
+    pdfknowledge: 'INDEX AKTUALISIEREN & SYNCHRONISIEREN',
+    postprocessing: 'DOKUMENTE EXPORTIEREN & SITZUNG ABSCHLIESSEN',
+    reports: 'DETAIL-BERICHT EXPORTIEREN (ANONYMISIERT)',
+    settings: 'KONFIGURATION SPEICHERN & SYSTEM NEUSTARTEN',
+  };
+  bar.textContent = ctaMap[id] || '';
+}
+
+function handleMainCta() {
+  const active = document.querySelector('.nav-item.active');
+  const screenId = active ? active.getAttribute('onclick').match(/'([^']+)'/)[1] : 'dashboard';
+  const messages = {
+    dashboard: 'Post-Processing wird gestartet...',
+    clientprofile: 'Index wird generiert...',
+    pdfknowledge: 'Synchronisierung läuft...',
+    postprocessing: 'Export wird vorbereitet...',
+    reports: 'Bericht wird exportiert...',
+    settings: 'Neustart wird vorbereitet...',
+  };
+  showToast(messages[screenId] || 'Verarbeitung...');
+}
+
+// ── TAGS ──
+function toggleTag(el) {
+  el.classList.toggle('active');
+}
+
+// ── MIC ──
+function toggleMic(el) {
+  el.classList.toggle('recording');
+  if (el.classList.contains('recording')) {
+    el.textContent = '⏹';
+    showToast('Aufnahme läuft... (Demo-Modus)');
+    setTimeout(() => {
+      el.classList.remove('recording');
+      el.textContent = '🎙';
+    }, 3000);
+  } else {
+    el.textContent = '🎙';
+  }
+}
+
+// ── RECORD Q ──
+function toggleRecordQ(btn, fieldId) {
+  const field = document.getElementById(fieldId);
+  if (btn.textContent.includes('STARTEN')) {
+    btn.textContent = '⏹ AUFNAHME STOPPEN';
+    btn.style.background = 'var(--red)';
+    showToast('Live-Transkription läuft...');
+    let demo = 'Ich interessiere mich für KFZ-Mechatronik, am liebsten bei Daimler oder Bosch...';
+    let i = 0;
+    field.value = '';
+    const interval = setInterval(() => {
+      if (i < demo.length) { field.value += demo[i++]; }
+      else { clearInterval(interval); }
+    }, 40);
+  } else {
+    btn.textContent = '🎙 AUFNAHME STARTEN';
+    btn.style.background = 'var(--green)';
+  }
+}
+
+function addNote(fieldId) {
+  const field = document.getElementById(fieldId);
+  field.value += (field.value ? '\n' : '') + '[Anmerkung] ';
+  field.focus();
+}
+
+// ── SUGGESTIONS ──
+function acceptSuggestion(btn) {
+  const card = btn.closest('.ai-suggestion');
+  card.style.borderLeftColor = 'var(--green)';
+  card.style.opacity = '0.5';
+  btn.textContent = '✓ ÜBERNOMMEN';
+  btn.disabled = true;
+  showToast('Vorschlag übernommen');
+}
+function rejectSuggestion(btn) {
+  const card = btn.closest('.ai-suggestion');
+  card.style.opacity = '0.3';
+  btn.textContent = '✗ IGNORIERT';
+  btn.disabled = true;
+}
+
+// ── CLIENT HEADER ──
+function updateClientHeader() {
+  const name = document.getElementById('clientName')?.value || '';
+  const age = document.getElementById('clientAge')?.value || '';
+  document.getElementById('clientSubtitle').textContent = `Client Name: ${name} (${age} yrs)`;
+}
+
+// ══════════════════════════════════════════════════════
+// PDF UPLOAD ENGINE – läuft 100% lokal im Browser
+// Kein Server nötig. Daten in localStorage gespeichert.
+// ══════════════════════════════════════════════════════
+
+// Storage-Schlüssel
+const KB_KEY = 'spot_kb_docs';
+const CLIENT_KEY = 'spot_client_docs';
+
+// Beim Laden: gespeicherte Daten wiederherstellen
+window.addEventListener('DOMContentLoaded', () => {
+  renderKBTable();
+  renderClientDocs();
+  initDropZones();
+  updateKBStats();
+});
+
+// ── DRAG & DROP INITIALISIERUNG ──
+function initDropZones() {
+  setupDropZone('kbDropZone', handleKBUpload);
+  setupDropZone('clientDropZone', handleClientUpload);
+}
+
+function setupDropZone(zoneId, handler) {
+  const zone = document.getElementById(zoneId);
+  if (!zone) return;
+  ['dragenter','dragover'].forEach(ev => {
+    zone.addEventListener(ev, e => {
+      e.preventDefault();
+      zone.style.borderColor = 'var(--green)';
+      zone.style.background = 'var(--green-glow)';
+    });
+  });
+  ['dragleave','drop'].forEach(ev => {
+    zone.addEventListener(ev, e => {
+      e.preventDefault();
+      zone.style.borderColor = '';
+      zone.style.background = '';
+    });
+  });
+  zone.addEventListener('drop', e => {
+    e.preventDefault();
+    zone.style.borderColor = '';
+    zone.style.background = '';
+    handler(e.dataTransfer.files);
+  });
+}
+
+// ── DATEI-TYP ERKENNUNG ──
+function getFileIcon(name) {
+  const ext = name.split('.').pop().toLowerCase();
+  if (ext === 'pdf') return '📋';
+  if (['jpg','jpeg','png','gif'].includes(ext)) return '🖼';
+  if (['docx','doc'].includes(ext)) return '📝';
+  if (ext === 'txt') return '📄';
+  return '📁';
+}
+
+function getFileCategory(name) {
+  const n = name.toLowerCase();
+  if (n.includes('regional') || n.includes('schrift')) return 'Regionalschrift';
+  if (n.includes('schul') || n.includes('verzeichnis')) return 'Schulverzeichnis';
+  if (n.includes('frist') || n.includes('termin')) return 'Fristen';
+  if (n.includes('berufe') || n.includes('ausbildung')) return 'Ausbildung';
+  if (n.includes('lebenslauf') || n.includes('cv')) return 'Lebenslauf';
+  if (n.includes('zeugnis') || n.includes('note')) return 'Zeugnis';
+  if (n.includes('zertifikat') || n.includes('kurs')) return 'Zertifikat';
+  if (n.includes('motivat')) return 'Motivationsschreiben';
+  return 'Allgemein';
+}
+
+function formatSize(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1048576) return (bytes/1024).toFixed(1) + ' KB';
+  return (bytes/1048576).toFixed(1) + ' MB';
+}
+
+function todayStr() {
+  return new Date().toLocaleDateString('de-DE', {day:'2-digit',month:'2-digit'});
+}
+
+// ── KNOWLEDGE BASE UPLOAD ──
+function handleKBUpload(files) {
+  if (!files || files.length === 0) return;
+  const stored = JSON.parse(localStorage.getItem(KB_KEY) || '[]');
+  let added = 0;
+
+  Array.from(files).forEach(file => {
+    // Doppelte verhindern
+    if (stored.find(d => d.name === file.name)) {
+      showToast(`⚠ "${file.name}" bereits vorhanden`);
+      return;
+    }
+    if (stored.length >= 500) {
+      showToast('⚠ Maximum 500 Dateien erreicht');
+      return;
+    }
+    stored.push({
+      id: Date.now() + Math.random(),
+      name: file.name,
+      category: getFileCategory(file.name),
+      size: formatSize(file.size),
+      sizeBytes: file.size,
+      status: 'indexing', // wird nach Animation zu 'indexed'
+      date: todayStr(),
+      added: Date.now()
+    });
+    added++;
+  });
+
+  localStorage.setItem(KB_KEY, JSON.stringify(stored));
+  renderKBTable();
+  updateKBStats();
+
+  if (added > 0) {
+    showToast(`✓ ${added} Datei${added>1?'en':''} hinzugefügt – Indizierung läuft...`);
+    // Nach 2.5s Status auf "indexed" setzen (simuliert KI-Indexierung)
+    setTimeout(() => {
+      const docs = JSON.parse(localStorage.getItem(KB_KEY) || '[]');
+      docs.forEach(d => { if (d.status === 'indexing') d.status = 'indexed'; });
+      localStorage.setItem(KB_KEY, JSON.stringify(docs));
+      renderKBTable();
+      updateKBStats();
+      showToast('✓ Indizierung abgeschlossen');
+    }, 2500);
+  }
+}
+
+// ── KB TABELLE RENDERN ──
+function renderKBTable() {
+  const tbody = document.getElementById('pdfTable');
+  if (!tbody) return;
+  const stored = JSON.parse(localStorage.getItem(KB_KEY) || '[]');
+
+  // Demo-Daten anzeigen wenn leer
+  const displayDocs = stored.length > 0 ? stored : getDemoDocs();
+
+  tbody.innerHTML = displayDocs.map(doc => `
+    <tr data-id="${doc.id || ''}" onclick="selectKBRow(this)" style="cursor:pointer;">
+      <td><span style="margin-right:6px;">${getFileIcon(doc.name)}</span>${doc.name}</td>
+      <td style="color:var(--text-dim)">${doc.category}</td>
+      <td>${doc.size}</td>
+      <td>${doc.status === 'indexing'
+        ? `<span class="badge badge-orange" style="animation:pulse 1s infinite;">⟳ Indiziert...</span>`
+        : `<span class="badge badge-green">✓ Indiziert</span>`
+      }</td>
+      <td>${doc.date}</td>
+    </tr>
+  `).join('');
+}
+
+function getDemoDocs() {
+  return [
+    {id:'d1',name:'Regionalschrift_Stuttgart.pdf',category:'Regionalschrift',size:'50.1 MB',status:'indexed',date:'01.03.'},
+    {id:'d2',name:'Schulverzeichnis_BW.pdf',category:'Schulverzeichnis',size:'31.9 MB',status:'indexed',date:'01.03.'},
+    {id:'d3',name:'Fristen_Ausbildung_2024.pdf',category:'Fristen',size:'37.3 MB',status:'indexed',date:'01.03.'},
+    {id:'d4',name:'Regionalschrift_BIW.pdf',category:'Regionalschrift',size:'36.0 MB',status:'indexed',date:'01.03.'},
+    {id:'d5',name:'Ausbildungsberufe_2024.pdf',category:'Ausbildung',size:'22.4 MB',status:'indexed',date:'28.02.'},
+  ];
+}
+
+let selectedKBId = null;
+function selectKBRow(row) {
+  document.querySelectorAll('#pdfTable tr').forEach(r => r.style.background = '');
+  row.style.background = 'rgba(0,230,118,0.08)';
+  selectedKBId = row.dataset.id;
+}
+
+// ── KB STATS AKTUALISIEREN ──
+function updateKBStats() {
+  const stored = JSON.parse(localStorage.getItem(KB_KEY) || '[]');
+  const totalReal = stored.length;
+  const totalDemo = 8;
+  const total = Math.max(totalReal + totalDemo, totalDemo);
+  const indexed = stored.filter(d => d.status === 'indexed').length + totalDemo;
+  const pct = Math.min(Math.round((indexed / 500) * 100), 100);
+  const totalBytes = stored.reduce((s, d) => s + (d.sizeBytes||0), 0);
+  const demoBytes = 287 * 1024 * 1024; // ~287 MB Demo
+  const totalGB = ((totalBytes + demoBytes) / 1073741824).toFixed(1);
+
+  // Ring aktualisieren
+  const ring = document.querySelector('#screen-pdfknowledge circle:last-child');
+  if (ring) {
+    const circ = 285;
+    ring.setAttribute('stroke-dashoffset', (circ * (1 - pct/100)).toFixed(1));
+  }
+  const pctEl = document.querySelector('#screen-pdfknowledge .ring-pct');
+  if (pctEl) pctEl.textContent = pct + '%';
+
+  // Zahlen aktualisieren
+  const statEls = document.querySelectorAll('#screen-pdfknowledge .sys-stat');
+  if (statEls[0]) statEls[0].textContent = `${indexed} / 500`;
+  if (statEls[1]) statEls[1].textContent = `${(indexed * 2500 / 1000000).toFixed(1)}M`;
+  if (statEls[2]) statEls[2].textContent = `${totalGB} GB`;
+}
+
+// ── KB AKTIONEN ──
+function kbAction(action) {
+  const stored = JSON.parse(localStorage.getItem(KB_KEY) || '[]');
+  if (action === 'delete' && selectedKBId) {
+    const updated = stored.filter(d => String(d.id) !== String(selectedKBId));
+    localStorage.setItem(KB_KEY, JSON.stringify(updated));
+    renderKBTable();
+    updateKBStats();
+    selectedKBId = null;
+    showToast('🗑 Dokument gelöscht');
+  } else if (action === 'index') {
+    stored.forEach(d => d.status = 'indexing');
+    localStorage.setItem(KB_KEY, JSON.stringify(stored));
+    renderKBTable();
+    showToast('⟳ Re-Indizierung gestartet...');
+    setTimeout(() => {
+      const docs = JSON.parse(localStorage.getItem(KB_KEY) || '[]');
+      docs.forEach(d => d.status = 'indexed');
+      localStorage.setItem(KB_KEY, JSON.stringify(docs));
+      renderKBTable();
+      updateKBStats();
+      showToast('✓ Alle Dokumente indiziert');
+    }, 2000);
+  } else if (action === 'preview' && selectedKBId) {
+    showToast('👁 Vorschau: Nur auf Mac Mini mit lokalem Backend verfügbar');
+  } else {
+    showToast('⚠ Bitte zuerst ein Dokument auswählen');
+  }
+}
+
+// ── CLIENT DOKUMENTE UPLOAD ──
+function handleClientUpload(files) {
+  if (!files || files.length === 0) return;
+  const stored = JSON.parse(localStorage.getItem(CLIENT_KEY) || '[]');
+  let added = 0;
+
+  Array.from(files).forEach(file => {
+    if (stored.find(d => d.name === file.name)) {
+      showToast(`⚠ "${file.name}" bereits vorhanden`);
+      return;
+    }
+    stored.push({
+      id: Date.now() + Math.random(),
+      name: file.name,
+      icon: getFileIcon(file.name),
+      size: formatSize(file.size),
+      status: 'processing',
+      date: todayStr()
+    });
+    added++;
+  });
+
+  localStorage.setItem(CLIENT_KEY, JSON.stringify(stored));
+  renderClientDocs();
+
+  if (added > 0) {
+    showToast(`✓ ${added} Klienten-Dokument${added>1?'e':''} hochgeladen`);
+    setTimeout(() => {
+      const docs = JSON.parse(localStorage.getItem(CLIENT_KEY) || '[]');
+      docs.forEach(d => { if (d.status === 'processing') d.status = 'indexed'; });
+      localStorage.setItem(CLIENT_KEY, JSON.stringify(docs));
+      renderClientDocs();
+      showToast('✓ Dokument verarbeitet & indiziert');
+    }, 2000);
+  }
+}
+
+// ── CLIENT DOCS RENDERN ──
+function renderClientDocs() {
+  const container = document.getElementById('docList');
+  if (!container) return;
+  const stored = JSON.parse(localStorage.getItem(CLIENT_KEY) || '[]');
+
+  const demoDocs = [
+    {id:'cd1', name:'Lebenslauf_Just_2023.pdf', icon:'📋', status:'indexed'},
+    {id:'cd2', name:'Zeugnis_Realschule_10_I.pdf', icon:'📋', status:'indexed'},
+    {id:'cd3', name:'Zertifikat_ComputerKurs.jpg', icon:'🖼', status:'processing'},
+  ];
+
+  const allDocs = [...demoDocs, ...stored];
+
+  container.innerHTML = allDocs.map(doc => `
+    <div class="file-row" onclick="selectClientDoc(this,'${doc.id}')" style="cursor:pointer;">
+      <div class="file-icon">${doc.icon}</div>
+      <div style="flex:1;">
+        <div class="file-name">${doc.name}</div>
+        <div style="margin-top:3px;">
+          ${doc.status === 'indexed'
+            ? `<span class="badge badge-green">[GREEN] Indiziert & Verarbeitet</span>`
+            : `<span class="badge badge-orange" style="animation:pulse 1s infinite;">[ORANGE] In Bearbeitung</span>`
+          }
+        </div>
+      </div>
+      ${stored.find(d=>String(d.id)===String(doc.id)) ? `<div onclick="event.stopPropagation();deleteClientDoc('${doc.id}')" style="cursor:pointer;color:var(--text-dim);font-size:12px;padding:2px 6px;" title="Löschen">✕</div>` : ''}
+    </div>
+  `).join('');
+}
+
+let selectedClientDocId = null;
+function selectClientDoc(row, id) {
+  document.querySelectorAll('#docList .file-row').forEach(r => r.style.background = '');
+  row.style.background = 'rgba(0,230,118,0.06)';
+  selectedClientDocId = id;
+}
+
+function deleteClientDoc(id) {
+  const stored = JSON.parse(localStorage.getItem(CLIENT_KEY) || '[]');
+  const updated = stored.filter(d => String(d.id) !== String(id));
+  localStorage.setItem(CLIENT_KEY, JSON.stringify(updated));
+  renderClientDocs();
+  showToast('🗑 Dokument gelöscht');
+}
+
+function clientDocAction(action) {
+  if (action === 'process') {
+    if (!selectedClientDocId) { showToast('⚠ Erst Dokument auswählen'); return; }
+    showToast('⟳ Verarbeitung läuft...');
+  } else if (action === 'delete') {
+    if (!selectedClientDocId) { showToast('⚠ Erst Dokument auswählen'); return; }
+    deleteClientDoc(selectedClientDocId);
+  } else if (action === 'preview') {
+    showToast('👁 Vorschau: Auf Mac Mini mit lokalem Backend verfügbar');
+  }
+}
+
+// ── RAM SLIDER ──
+function updateRamLabel(el) {
+  document.getElementById('ramLabel').textContent = el.value + ' GB';
+}
+
+// ── TOAST ──
+function showToast(msg) {
+  const el = document.getElementById('toastEl');
+  el.textContent = msg;
+  el.style.transform = 'translateX(-50%) translateY(0)';
+  setTimeout(() => { el.style.transform = 'translateX(-50%) translateY(80px)'; }, 2500);
+}
+
+// ══════════════════════════════════════════════════════
+// BACKEND-BRIDGE
+// Versucht automatisch das FastAPI-Backend zu erreichen.
+// Fällt auf localStorage zurück wenn offline.
+// ══════════════════════════════════════════════════════
+
+const BACKEND = 'http://localhost:8000';
+let backendOnline = false;
+let currentKlientId = null;
+let currentSessionId = null;
+
+// Beim Start: Backend-Status prüfen
+async function checkBackend() {
+  const ind = document.getElementById('backendIndicator');
+  try {
+    const r = await fetch(`${BACKEND}/api/health`, {signal: AbortSignal.timeout(1500)});
+    const data = await r.json();
+    backendOnline = true;
+    if (ind) {
+      ind.textContent = '⬤ BACKEND: ONLINE';
+      ind.style.color = 'var(--green)';
+    }
+    updateAPIStatus(data);
+    showToast('✓ Backend verbunden – Daten werden geladen');
+    await loadKlientenFromBackend();
+  } catch {
+    backendOnline = false;
+    if (ind) {
+      ind.textContent = '⬤ BACKEND: OFFLINE (localStorage)';
+      ind.style.color = 'var(--orange)';
+    }
+  }
+}
+
+function updateAPIStatus(health) {
+  // API-Status Panel im Dashboard aktualisieren
+  const rows = document.querySelectorAll('.pipe-step');
+  if (!rows.length) return;
+  // Anthropic API
+  rows.forEach(row => {
+    const label = row.querySelector('span:not(.badge)')?.textContent || '';
+    const badge = row.querySelector('.badge');
+    if (!badge) return;
+    if (label.includes('Anthropic') && health.claude_api) {
+      badge.className = 'badge badge-green'; badge.textContent = 'AKTIV';
+      row.querySelector('.pipe-dot').style.background = 'var(--green)';
+    }
+    if (label.includes('ChromaDB') || label.includes('Chroma')) {
+      badge.className = 'badge badge-orange'; badge.textContent = 'GEPLANT';
+    }
+  });
+}
+
+// ── KLIENTEN LADEN ──
+async function loadKlientenFromBackend() {
+  if (!backendOnline) return;
+  try {
+    const r = await fetch(`${BACKEND}/api/klienten`);
+    const data = await r.json();
+    if (data.klienten && data.klienten.length > 0) {
+      const k = data.klienten[data.klienten.length - 1]; // letzten laden
+      fillClientFields(k);
+    }
+  } catch(e) { console.warn('Klienten laden fehlgeschlagen:', e); }
+}
+
+function fillClientFields(k) {
+  const nameEl = document.getElementById('clientName');
+  const ageEl  = document.getElementById('clientAge');
+  if (nameEl) { nameEl.value = k.name; }
+  if (ageEl)  { ageEl.value  = k.alter; }
+  currentKlientId = k.id;
+  updateClientHeader();
+  // Interessen-Tags setzen
+  if (k.interessen && k.interessen.length) {
+    document.querySelectorAll('.tag').forEach(t => {
+      if (k.interessen.includes(t.textContent.trim())) t.classList.add('active');
+    });
+  }
+}
+
+// ── KLIENT SPEICHERN ──
+async function saveKlientToBackend() {
+  const name = document.getElementById('clientName')?.value || '';
+  const age  = parseInt(document.getElementById('clientAge')?.value || '16');
+  const interessen = [...document.querySelectorAll('.tag.active')].map(t => t.textContent.trim());
+
+  const payload = {
+    name, alter: age, interessen,
+    schule: document.querySelector('input[placeholder*="Realschule"]')?.value || '',
+    zielgruppe: document.querySelector('#screen-dashboard select')?.value || ''
+  };
+
+  if (backendOnline) {
+    try {
+      const method = currentKlientId ? 'PUT' : 'POST';
+      const url = currentKlientId
+        ? `${BACKEND}/api/klienten/${currentKlientId}`
+        : `${BACKEND}/api/klienten`;
+      const r = await fetch(url, {
+        method,
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(payload)
+      });
+      const data = await r.json();
+      if (data.success) {
+        currentKlientId = data.klient.id;
+        showToast(`✓ Klient "${name}" gespeichert (ID: ${data.klient.id})`);
+        return;
+      }
+    } catch(e) { console.warn('Backend-Speichern fehlgeschlagen:', e); }
+  }
+  // localStorage Fallback
+  localStorage.setItem('spot_current_klient', JSON.stringify({...payload, id: currentKlientId || 'lokal'}));
+  showToast(`✓ Lokal gespeichert (Backend offline)`);
+}
+
+// ── KI-ANALYSE STARTEN ──
+async function startKIAnalyse(modus = 'bewerbermappe') {
+  const btn = event?.target;
+  if (btn) { btn.textContent = '⟳ KI analysiert...'; btn.disabled = true; }
+
+  const leitfragen = {
+    frage1: document.getElementById('q1text')?.value || '',
+    frage2: document.getElementById('q2text')?.value || '',
+    frage3: document.getElementById('q3text')?.value || ''
+  };
+  const interessen = [...document.querySelectorAll('.tag.active')].map(t => t.textContent.trim());
+
+  if (backendOnline && currentKlientId) {
+    try {
+      const r = await fetch(`${BACKEND}/api/ki/analysiere`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          klient_id: currentKlientId,
+          leitfragen, interessen, modus,
+          transkript: leitfragen.frage1 + ' ' + leitfragen.frage2
+        })
+      });
+      const data = await r.json();
+      if (data.success) {
+        showKIResult(data.ergebnis?.text || JSON.stringify(data.ergebnis, null, 2));
+      } else {
+        showKIResult(data.demo?.text || data.error || 'Fehler bei KI-Analyse');
+      }
+    } catch(e) {
+      showKIResult('Backend nicht erreichbar. Klient zuerst speichern.');
+    }
+  } else {
+    showKIResult(!backendOnline
+      ? '⚠ Backend offline. Starte main.py und setze ANTHROPIC_API_KEY in .env'
+      : '⚠ Klient noch nicht gespeichert. Klicke "Klient speichern".'
+    );
+  }
+  if (btn) { btn.textContent = '⚡ KI-ANALYSE'; btn.disabled = false; }
+}
+
+function showKIResult(text) {
+  // KI-Ergebnis in Post-Processing Bereich anzeigen
+  const target = document.querySelector('#screen-postprocessing .ai-suggestion-body');
+  if (target) {
+    target.textContent = text;
+    target.style.whiteSpace = 'pre-wrap';
+    target.style.maxHeight = '200px';
+    target.style.overflow = 'auto';
+    showScreen('postprocessing', document.querySelector('[onclick*="postprocessing"]'));
+  }
+  showToast('✓ KI-Analyse abgeschlossen');
+}
+
+// ── BACKEND-UPLOAD (überschreibt localStorage-Handler) ──
+const _origHandleKBUpload = handleKBUpload;
+async function handleKBUploadWithBackend(files) {
+  if (!backendOnline) { _origHandleKBUpload(files); return; }
+  const arr = Array.from(files);
+  showToast(`⟳ ${arr.length} Datei(en) werden hochgeladen...`);
+  for (const file of arr) {
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      const r = await fetch(`${BACKEND}/api/upload/knowledge-base`, {method:'POST', body:fd});
+      const data = await r.json();
+      if (data.success) {
+        showToast(`✓ "${file.name}" indiziert`);
+      }
+    } catch(e) {
+      _origHandleKBUpload([file]); // Fallback auf localStorage
+    }
+  }
+  // Tabelle aus Backend neu laden
+  await refreshKBTableFromBackend();
+}
+
+async function refreshKBTableFromBackend() {
+  if (!backendOnline) { renderKBTable(); return; }
+  try {
+    const r = await fetch(`${BACKEND}/api/knowledge-base`);
+    const data = await r.json();
+    const tbody = document.getElementById('pdfTable');
+    if (!tbody) return;
+    const allDocs = [...getDemoDocs(), ...data.docs];
+    tbody.innerHTML = allDocs.map(doc => `
+      <tr data-id="${doc.id||''}" onclick="selectKBRow(this)" style="cursor:pointer;">
+        <td><span style="margin-right:6px;">${getFileIcon(doc.name||doc.original_name||'')}</span>${doc.original_name||doc.name}</td>
+        <td style="color:var(--text-dim)">${doc.kategorie||doc.category||'—'}</td>
+        <td>${doc.groesse||doc.size||'—'}</td>
+        <td><span class="badge badge-green">✓ Indiziert</span></td>
+        <td>${doc.datum||doc.date||'—'}</td>
+      </tr>
+    `).join('');
+  } catch(e) { renderKBTable(); }
+}
+
+// Überschreibe KB-Upload mit Backend-Version
+window.addEventListener('DOMContentLoaded', () => {
+  // kbFileInput neu verdrahten
+  const inp = document.getElementById('kbFileInput');
+  if (inp) inp.onchange = e => handleKBUploadWithBackend(e.target.files);
+  // Drop Zone auch
+  const zone = document.getElementById('kbDropZone');
+  if (zone) {
+    zone.addEventListener('drop', e => {
+      e.preventDefault();
+      zone.style.borderColor = '';
+      zone.style.background = '';
+      handleKBUploadWithBackend(e.dataTransfer.files);
+    });
+  }
+  checkBackend();
+});
+
+// ── API HOOKS ── (vollständig für Mac Mini M4)
+const API = {
+  connectOllama:   async (host='http://localhost:11434') => {
+    /* TODO Mac Mini: const r = await fetch(host+'/api/tags'); return r.json(); */
+  },
+  connectWhisper:  async () => {
+    /* TODO Mac Mini: WebSocket zu faster-whisper ws://localhost:9001 */
+  },
+  connectChroma:   async () => {
+    /* TODO Mac Mini: chromadb über /api/rag endpoint */
+  },
+  runRAGQuery:     async (query) => {
+    if (!backendOnline) return null;
+    /* Aktuell: Keyword-RAG im Backend. TODO: Vektorsuche mit ChromaDB */
+  },
+  startKIAnalyse,  // ← bereits implementiert
+  saveKlient: saveKlientToBackend,
+};
+</script>
+</body>
+</html>
