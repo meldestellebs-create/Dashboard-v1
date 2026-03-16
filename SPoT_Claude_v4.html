@@ -1,0 +1,1367 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SPoT Smart Protocol – Claude v4</title>
+<style>
+:root {
+  --bg-base:#F5F7FA; --bg-card:#FFFFFF; --bg-card2:#F3FBF5;
+  --border:#E1E8ED; --border-bright:#B7D8BF;
+  --primary:#2E9C56; --primary-dim:#237A43; --primary-glow:rgba(46,156,86,0.12);
+  --orange:#E67E22; --orange-dim:rgba(230,126,34,0.15);
+  --red:#E74C3C; --red-dim:rgba(231,76,60,0.12);
+  --blue:#6B2E7F; --blue-dim:rgba(107,46,127,0.12);
+  --text-primary:#2C3E50; --text-secondary:#4A5568; --text-dim:#7F8C8D;
+  --mono:'JetBrains Mono','Courier New',monospace;
+  --sans:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+  --sidebar-w:200px; --header-h:52px;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg-base);color:var(--text-primary);font-family:var(--sans);height:100vh;overflow:hidden;display:flex;flex-direction:column;font-size:13px;}
+
+/* TOPBAR */
+.topbar{height:var(--header-h);background:var(--bg-card2);border-bottom:2px solid var(--primary);display:flex;align-items:center;justify-content:space-between;padding:0 20px;flex-shrink:0;}
+.logo{font-family:var(--mono);font-size:17px;font-weight:700;}
+.logo span{color:var(--primary);}
+.logo-sub{font-family:var(--mono);font-size:10px;color:var(--text-dim);margin-top:1px;}
+.topbar-right{display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:10px;}
+.sys-badge{background:var(--bg-base);border:1px solid var(--border);padding:3px 8px;border-radius:4px;color:var(--text-secondary);}
+.status-badge{font-family:var(--mono);font-size:10px;padding:3px 8px;border-radius:4px;}
+.badge-online{border:1px solid rgba(46,156,86,0.3);background:var(--primary-glow);color:var(--primary);}
+.badge-offline{border:1px solid rgba(230,126,34,0.3);background:var(--orange-dim);color:var(--orange);}
+
+/* LAYOUT */
+.layout{display:flex;flex:1;overflow:hidden;}
+.sidebar{width:var(--sidebar-w);background:var(--bg-card2);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;}
+.sidebar-nav{flex:1;padding:12px 0;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 16px;cursor:pointer;font-family:var(--sans);font-size:12px;font-weight:500;color:var(--text-secondary);transition:all 0.15s;border-left:2px solid transparent;}
+.nav-item:hover{color:var(--primary);background:var(--primary-glow);}
+.nav-item.active{color:var(--primary);background:var(--primary-glow);border-left-color:var(--primary);font-weight:700;}
+.nav-icon{font-size:13px;width:16px;text-align:center;flex-shrink:0;}
+.sidebar-bottom{padding:10px 12px;border-top:1px solid var(--border);font-family:var(--sans);font-size:11px;}
+.obs-line{color:var(--text-dim);margin-bottom:6px;}
+.obs-line .on{color:var(--primary);font-weight:700;}
+.api-mini{display:flex;flex-direction:column;gap:3px;}
+.api-dot-row{display:flex;align-items:center;gap:5px;color:var(--text-dim);font-size:10px;}
+.dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.dot-on{background:var(--primary);}
+.dot-off{background:var(--orange);}
+
+/* CONTENT */
+.content{flex:1;overflow:hidden;background:var(--bg-base);display:flex;flex-direction:column;}
+.screen{display:none;}
+.screen.active{display:grid;gap:10px;padding:12px;height:calc(100vh - var(--header-h));overflow:hidden;align-items:start;}
+.scol{display:flex;flex-direction:column;gap:10px;overflow-y:auto;overflow-x:hidden;min-height:0;max-height:100%;padding-right:2px;}
+.scol::-webkit-scrollbar{width:3px;}
+.scol::-webkit-scrollbar-thumb{background:var(--border-bright);border-radius:3px;}
+
+/* CARDS */
+.card{background:var(--bg-card2);border:1px solid var(--border-bright);border-radius:6px;padding:10px;flex-shrink:0;}
+.card-title{font-family:var(--sans);font-size:15px;font-weight:700;color:var(--text-primary);margin-bottom:8px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;line-height:1.35;}
+.card-title span{color:var(--text-secondary);font-weight:500;font-size:12px;}
+.card-subtitle{font-family:var(--sans);font-size:12px;color:var(--text-secondary);margin-bottom:8px;margin-top:-4px;}
+.divider{border:none;border-top:1px solid var(--border);margin:10px 0;}
+
+/* OFFLINE BADGE */
+.offline-badge{display:inline-flex;align-items:center;gap:2px;padding:1px 5px;border-radius:3px;font-family:var(--mono);font-size:9px;font-weight:700;background:var(--blue-dim);color:var(--blue);border:1px solid rgba(107,46,127,0.25);margin-left:4px;vertical-align:middle;}
+
+/* HERKUNFTS-MARKIERUNG im Beratungsergebnis */
+.feld-auto{position:relative;}
+.feld-auto input,.feld-auto textarea{border-color:rgba(46,156,86,0.4);background:rgba(46,156,86,0.04);}
+.feld-auto-label{font-family:var(--mono);font-size:9px;color:var(--primary);opacity:0.7;margin-bottom:2px;}
+
+/* WORKFLOW */
+.workflow-karte{background:var(--bg-card2);border:2px solid var(--border-bright);border-radius:8px;padding:10px;flex-shrink:0;}
+.workflow-karte-titel{font-family:var(--sans);font-size:14px;font-weight:700;color:var(--text-primary);margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+.workflow-schritt{border:1px solid var(--border);border-radius:6px;padding:8px 10px;background:var(--bg-base);margin-bottom:5px;}
+.workflow-schritt:last-child{margin-bottom:0;}
+.workflow-schritt-header{display:flex;align-items:center;gap:7px;}
+.workflow-schritt-nr{width:20px;height:20px;border-radius:50%;background:var(--border);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:10px;font-weight:700;color:var(--text-dim);flex-shrink:0;}
+.workflow-schritt-nr.done{background:var(--primary);color:#fff;}
+.workflow-schritt-nr.laufend{background:var(--orange);color:#fff;}
+.workflow-schritt-titel{font-family:var(--sans);font-size:12px;font-weight:700;color:var(--text-primary);flex:1;}
+.workflow-schritt-voraus{font-family:var(--mono);font-size:9px;color:var(--text-dim);margin-top:4px;padding-top:4px;border-top:1px dashed var(--border);display:none;}
+.workflow-schritt-voraus.sichtbar{display:block;}
+
+/* ZENTRALES ERGEBNISFENSTER */
+.ergebnis-fenster{background:white;border:2px solid var(--border-bright);border-radius:8px;padding:12px;min-height:200px;flex-shrink:0;}
+.ergebnis-fenster-titel{font-family:var(--mono);font-size:10px;font-weight:700;color:var(--primary);letter-spacing:0.5px;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:6px;}
+.ergebnis-tab{display:inline-flex;align-items:center;padding:3px 8px;border-radius:4px;font-family:var(--mono);font-size:10px;cursor:pointer;border:1px solid var(--border);background:var(--bg-base);color:var(--text-dim);margin-right:4px;margin-bottom:6px;}
+.ergebnis-tab.active{background:var(--primary-glow);border-color:var(--primary);color:var(--primary);font-weight:700;}
+.ergebnis-inhalt{display:none;}
+.ergebnis-inhalt.active{display:block;}
+.analyse-block{margin-bottom:10px;}
+.analyse-block-titel{font-size:10px;font-weight:700;color:var(--primary);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px;}
+.analyse-text{background:var(--bg-base);border:1px solid var(--border-bright);border-radius:5px;padding:8px 10px;font-family:var(--sans);font-size:12px;line-height:1.65;color:var(--text-primary);min-height:50px;white-space:pre-wrap;}
+.analyse-text[contenteditable="true"]:focus{outline:1px solid var(--primary);border-radius:5px;}
+
+/* BADGES allgemein */
+.badge{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:3px;font-family:var(--mono);font-size:10px;font-weight:600;}
+.badge-green{background:var(--primary-glow);color:var(--primary);border:1px solid rgba(46,156,86,0.25);}
+.badge-orange{background:var(--orange-dim);color:var(--orange);border:1px solid rgba(230,126,34,0.3);}
+.badge-red{background:var(--red-dim);color:var(--red);border:1px solid rgba(231,76,60,0.3);}
+.badge-blue{background:var(--blue-dim);color:var(--blue);border:1px solid rgba(107,46,127,0.3);}
+.badge-gray{background:var(--bg-base);color:var(--text-dim);border:1px solid var(--border);}
+.badge-geplant{background:rgba(107,46,127,0.08);color:var(--blue);border:1px solid rgba(107,46,127,0.2);opacity:0.7;}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:6px 12px;border-radius:4px;border:none;cursor:pointer;font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:0.3px;transition:all 0.15s;}
+.btn-primary{background:var(--primary);color:#fff;}
+.btn-primary:hover{background:var(--primary-dim);}
+.btn-primary:disabled{background:var(--border);color:var(--text-dim);cursor:not-allowed;}
+.btn-orange{background:var(--orange);color:#fff;}
+.btn-red{background:var(--red);color:#fff;}
+.btn-ghost{background:transparent;border:1px solid var(--border-bright);color:var(--text-secondary);}
+.btn-ghost:hover{border-color:var(--primary);color:var(--primary);}
+.btn-ghost:disabled{opacity:0.4;cursor:not-allowed;}
+.btn-subtle{background:var(--bg-base);border:1px solid var(--border);color:var(--text-secondary);}
+.btn-subtle:hover{border-color:var(--primary);color:var(--primary);}
+.btn-subtle:disabled{opacity:0.4;cursor:not-allowed;}
+
+/* TOGGLE */
+.toggle-wrap{display:flex;align-items:center;gap:10px;}
+.toggle{position:relative;width:36px;height:20px;cursor:pointer;}
+.toggle input{opacity:0;width:0;height:0;}
+.toggle-slider{position:absolute;inset:0;background:var(--border);border-radius:20px;transition:0.2s;}
+.toggle-slider:before{content:'';position:absolute;width:14px;height:14px;left:3px;bottom:3px;background:white;border-radius:50%;transition:0.2s;}
+.toggle input:checked + .toggle-slider{background:var(--primary);}
+.toggle input:checked + .toggle-slider:before{transform:translateX(16px);}
+.toggle-label{font-family:var(--sans);font-size:12px;color:var(--text-primary);font-weight:600;}
+
+/* FORMS */
+label{font-family:var(--sans);font-size:12px;color:var(--text-primary);display:block;margin-bottom:4px;font-weight:600;}
+input[type=text],input[type=number],input[type=email],input[type=tel],input[type=password],textarea,select{width:100%;background:rgba(255,255,255,0.48);border:1px solid var(--border-bright);border-radius:6px;padding:6px 9px;color:var(--text-primary);font-family:var(--sans);font-size:12px;outline:none;transition:border-color 0.15s,background 0.15s;}
+input:focus,textarea:focus,select:focus{border-color:var(--primary);background:rgba(255,255,255,0.72);}
+textarea{resize:vertical;min-height:60px;}
+input:disabled,select:disabled,textarea:disabled{opacity:0.45;cursor:not-allowed;}
+
+/* MIC */
+.mic-btn{width:28px;height:28px;border-radius:4px;background:var(--primary-glow);border:1px solid rgba(46,156,86,0.3);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;flex-shrink:0;transition:all 0.15s;}
+.mic-btn.recording{background:var(--red);animation:pulse 1s infinite;}
+
+/* CHIPS */
+.mini-chip{display:inline-flex;align-items:center;padding:3px 7px;border-radius:14px;border:1px solid var(--border-bright);background:rgba(255,255,255,0.52);font-family:var(--sans);font-size:10px;color:var(--text-primary);line-height:1.2;cursor:pointer;transition:all 0.12s;}
+.mini-chip:hover{border-color:var(--primary);color:var(--primary);}
+.mini-chip.active{background:var(--primary-glow);border-color:var(--primary);color:var(--primary);font-weight:700;}
+.mini-chips{display:flex;flex-wrap:wrap;gap:4px;align-content:flex-start;}
+
+/* CHECKS */
+.check-item{display:flex;align-items:center;gap:7px;padding:4px 0;font-family:var(--sans);font-size:12px;color:var(--text-primary);}
+.check-item input[type=checkbox]{width:14px;height:14px;cursor:pointer;accent-color:var(--primary);}
+
+/* DROP ZONE */
+.drop-zone{border:2px dashed var(--border-bright);border-radius:6px;padding:16px;text-align:center;cursor:pointer;transition:all 0.15s;background:var(--bg-base);}
+.drop-zone:hover{border-color:var(--primary);background:var(--primary-glow);}
+.drop-zone-icon{font-size:22px;margin-bottom:6px;opacity:0.5;}
+.drop-zone-text{font-family:var(--mono);font-size:10px;color:var(--text-dim);line-height:1.6;}
+
+/* TABLE */
+table{width:100%;border-collapse:collapse;}
+th{text-align:left;padding:6px 8px;font-family:var(--mono);font-size:10px;color:var(--text-dim);letter-spacing:0.5px;text-transform:uppercase;border-bottom:1px solid var(--border);}
+td{padding:6px 8px;font-family:var(--mono);font-size:11px;border-bottom:1px solid var(--border);color:var(--text-secondary);vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--primary-glow);}
+.table-scroll{overflow-x:auto;max-height:240px;overflow-y:auto;}
+.table-scroll::-webkit-scrollbar{width:3px;height:3px;}
+.table-scroll::-webkit-scrollbar-thumb{background:var(--border-bright);border-radius:3px;}
+
+/* STATS */
+.stat-box{background:var(--bg-base);border:1px solid var(--border);border-radius:6px;padding:10px 12px;text-align:center;}
+.stat-num{font-family:var(--mono);font-size:22px;font-weight:700;color:var(--primary);line-height:1;}
+.stat-label{font-family:var(--sans);font-size:11px;color:var(--text-dim);margin-top:4px;}
+.bar-wrap{display:flex;align-items:flex-end;gap:5px;height:60px;}
+.bar-col{display:flex;flex-direction:column;align-items:center;gap:3px;flex:1;}
+.bar{width:100%;border-radius:3px 3px 0 0;}
+.bar-label{font-family:var(--mono);font-size:8px;color:var(--text-dim);}
+.sparkline{display:flex;align-items:flex-end;gap:2px;height:32px;}
+.spark-bar{flex:1;background:var(--primary);opacity:0.6;border-radius:2px 2px 0 0;}
+
+/* SEARCH */
+.search-wrap{position:relative;}
+.search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text-dim);font-size:14px;pointer-events:none;}
+.search-result-item{padding:10px 12px;border:1px solid var(--border);border-radius:6px;background:var(--bg-base);margin-bottom:6px;cursor:pointer;transition:all 0.15s;}
+.search-result-item:hover{border-color:var(--primary);background:var(--primary-glow);}
+.search-result-title{font-family:var(--sans);font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:3px;}
+.search-result-excerpt{font-family:var(--sans);font-size:12px;color:var(--text-secondary);line-height:1.5;}
+.search-result-meta{font-family:var(--mono);font-size:10px;color:var(--text-dim);margin-top:4px;display:flex;gap:12px;}
+
+/* DASHBOARD */
+.dashboard-top{display:grid;grid-template-columns:1.18fr 0.92fr 0.90fr;gap:8px;align-items:stretch;}
+.dashboard-main{display:grid;grid-template-rows:auto 1fr;gap:7px;min-height:0;height:calc(100vh - var(--header-h) - 24px);}
+.question-shell{background:var(--bg-card2);border:1px solid var(--border-bright);border-radius:6px;padding:8px;display:grid;grid-template-columns:185px 1fr 285px;gap:9px;min-height:148px;}
+.question-side{display:flex;flex-direction:column;gap:4px;}
+.question-text{font-size:15px;font-weight:700;line-height:1.28;color:var(--text-primary);}
+.question-meta{font-family:var(--sans);font-size:11px;color:var(--text-secondary);line-height:1.35;}
+.question-right{display:flex;flex-direction:column;gap:6px;}
+.mini-label{font-family:var(--sans);font-size:12px;font-weight:600;color:var(--text-primary);}
+.mini-essenz{min-height:48px;font-size:12px !important;}
+.top-card{padding:8px !important;height:100%;display:flex;flex-direction:column;gap:6px;}
+.top-card .card-title{margin-bottom:2px;font-size:15px;}
+.top-card .mini-summary{padding:6px 8px;background:rgba(255,255,255,0.45);border:1px solid var(--border-bright);border-radius:6px;font-family:var(--sans);font-size:12px;color:var(--text-primary);}
+.top-card .select-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.guided-field{position:relative;min-height:102px;}
+.guided-field textarea{position:relative;z-index:2;background:transparent;}
+.field-guide{position:absolute;inset:28px 10px 8px 10px;z-index:1;color:var(--text-secondary);font-size:12px;line-height:1.42;pointer-events:none;white-space:pre-line;}
+.field-guide.hidden{display:none;}
+
+/* RECHERCHE */
+.recherche-result{border:1px solid var(--border);border-radius:5px;padding:8px 10px;background:var(--bg-base);display:flex;align-items:flex-start;gap:8px;}
+.recherche-result:not(:last-child){margin-bottom:6px;}
+.recherche-result input[type=checkbox]{margin-top:2px;width:14px;height:14px;accent-color:var(--primary);flex-shrink:0;}
+.recherche-result-body{flex:1;min-width:0;}
+.recherche-result-title{font-family:var(--sans);font-size:12px;font-weight:700;color:var(--text-primary);margin-bottom:2px;}
+.recherche-result-meta{font-family:var(--mono);font-size:10px;color:var(--text-dim);}
+
+/* SITZUNG */
+.sitzung-row{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border);}
+.sitzung-row:last-child{border-bottom:none;}
+
+/* INFO BOX */
+.info-box{background:var(--bg-base);border:1px solid var(--border);border-radius:5px;padding:8px 10px;font-size:11px;color:var(--text-dim);line-height:1.6;}
+.info-box.ok{border-color:rgba(46,156,86,0.3);background:var(--primary-glow);color:var(--primary);}
+.info-box.warn{border-color:rgba(230,126,34,0.4);background:var(--orange-dim);color:var(--orange);}
+
+/* CONFIRM MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.35);display:flex;align-items:center;justify-content:center;z-index:1000;display:none;}
+.modal-overlay.open{display:flex;}
+.modal-box{background:white;border-radius:8px;padding:20px 24px;max-width:340px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.18);}
+.modal-titel{font-family:var(--sans);font-size:15px;font-weight:700;color:var(--text-primary);margin-bottom:8px;}
+.modal-text{font-family:var(--sans);font-size:12px;color:var(--text-secondary);margin-bottom:16px;line-height:1.6;}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;}
+
+/* GRID */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+.g4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;}
+
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spinning{display:inline-block;animation:spin 1s linear infinite}
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-thumb{background:var(--border-bright);border-radius:4px;}
+@media(max-width:1180px){
+  .dashboard-top{grid-template-columns:1fr !important;}
+  .question-shell{grid-template-columns:1fr !important;min-height:auto;}
+}
+</style>
+</head>
+<body>
+
+<!-- CONFIRM MODAL -->
+<div class="modal-overlay" id="confirmModal">
+  <div class="modal-box">
+    <div class="modal-titel" id="modalTitel">Wirklich löschen?</div>
+    <div class="modal-text" id="modalText">Diese Aktion kann nicht rückgängig gemacht werden.</div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="modalAbbrechen()">Abbrechen</button>
+      <button class="btn btn-red" id="modalBestaetigen">Löschen</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div>
+    <div class="logo"><span>SPoT</span> – Smart Protocol</div>
+    <div class="logo-sub" id="clientSubtitle">Kunde: JUSTIN SCHMIDT (16 Jahre)</div>
+  </div>
+  <div class="topbar-right">
+    <div class="sys-badge">macOS · Lokal</div>
+    <div class="sys-badge">Whisper STT</div>
+    <div class="status-badge badge-online">⬤ OBS: AN</div>
+    <div class="status-badge badge-offline">⬤ Backend: Offline</div>
+  </div>
+</div>
+
+<div class="layout">
+  <nav class="sidebar">
+    <div class="sidebar-nav">
+      <div class="nav-item active" onclick="showScreen('dashboard',this)"><span class="nav-icon">⊞</span> Dashboard</div>
+      <div class="nav-item" onclick="showScreen('kundenprofil',this)"><span class="nav-icon">◉</span> Kundenprofil</div>
+      <div class="nav-item" onclick="showScreen('wissensbasis',this)"><span class="nav-icon">◈</span> Wissensbasis</div>
+      <div class="nav-item" onclick="showScreen('auswertung',this)"><span class="nav-icon">▤</span> Auswertung</div>
+      <div class="nav-item" onclick="showScreen('einstellungen',this)"><span class="nav-icon">⚙</span> Einstellungen</div>
+    </div>
+    <div class="sidebar-bottom">
+      <div class="obs-line">OBS: <span class="on">AN</span> (Multi-Track)</div>
+      <div class="api-mini">
+        <div class="api-dot-row"><div class="dot dot-on"></div>Whisper STT<span style="margin-left:auto;color:var(--primary);">Bereit</span></div>
+        <div class="api-dot-row"><div class="dot dot-off"></div>Lokales LLM<span style="margin-left:auto;color:var(--orange);">Inaktiv</span></div>
+        <div class="api-dot-row"><div class="dot dot-on"></div>Anthropic API<span style="margin-left:auto;color:var(--primary);">Aktiv</span></div>
+        <div class="api-dot-row"><div class="dot dot-off"></div>Stellen-API<span style="margin-left:auto;color:var(--orange);">Offline</span></div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="content">
+
+    <!-- ══════════════════════ DASHBOARD ══════════════════════ -->
+    <div class="screen active" id="screen-dashboard" style="grid-template-columns:1fr;gap:7px;overflow:hidden;align-items:stretch;">
+      <div class="dashboard-main">
+        <div class="dashboard-top">
+          <div class="card top-card">
+            <div class="card-title">Stammdaten</div>
+            <div style="display:grid;grid-template-columns:1.5fr 0.55fr 0.75fr;gap:8px;align-items:end;">
+              <div>
+                <label>Name</label>
+                <div style="display:flex;gap:6px;align-items:center;">
+                  <input type="text" id="clientName" value="JUSTIN SCHMIDT" oninput="updateClientHeader()" placeholder="Vor- und Nachname">
+                  <div class="mic-btn" onclick="toggleMic(this)">🎙️</div>
+                </div>
+              </div>
+              <div><label>Alter</label><input type="number" id="clientAge" value="16" oninput="updateClientHeader()"></div>
+              <div><label>Klasse</label><input type="text" value="Kl. 10"></div>
+            </div>
+            <div>
+              <label>Schulart</label>
+              <select id="dSchulart">
+                <option>Werkrealschule</option><option>Hauptschule</option>
+                <option selected>Realschule</option><option>Gemeinschaftsschule</option>
+                <option>Gymnasium</option><option>Berufliche Schule</option><option>SBBZ</option>
+              </select>
+            </div>
+          </div>
+          <div class="card top-card">
+            <div class="card-title">Start / Ziel</div>
+            <div class="select-row">
+              <div>
+                <label>Startpunkt</label>
+                <select id="szStart" onchange="updateStartZiel()">
+                  <option value="">-- wählen --</option>
+                  <option>Ohne Abschluss</option><option>SBBZ</option><option>VABO</option><option>AVdual</option>
+                  <option selected>Hauptschulabschluss</option><option>Mittlere Reife</option>
+                  <option>Fachhochschulreife</option><option>Abitur</option>
+                </select>
+              </div>
+              <div>
+                <label>Zielpunkt</label>
+                <select id="szZiel" onchange="updateStartZiel()">
+                  <option value="">-- wählen --</option>
+                  <option>BVE</option><option>Hauptschulabschluss</option>
+                  <option selected>Berufsabschluss</option><option>Mittlere Reife</option>
+                  <option>Fachhochschulreife</option><option>Abitur</option><option>Bachelor / Master</option>
+                </select>
+              </div>
+            </div>
+            <div class="mini-summary" style="padding:6px 8px;background:rgba(255,255,255,0.45);border:1px solid var(--border-bright);border-radius:6px;font-size:12px;">
+              <span style="font-weight:600;">Ergebnis:</span> <span id="szSummary">Hauptschulabschluss → Berufsabschluss</span>
+            </div>
+          </div>
+          <div class="card top-card">
+            <div class="card-title">Erste Orientierung</div>
+            <div>
+              <label>Priorisierte Richtung</label>
+              <select id="orientRichtung">
+                <option>-- wählen --</option><option selected>Ausbildung</option>
+                <option>Berufliche Schule</option><option>Praktikum</option>
+                <option>Studium</option><option>Übergangsangebot</option>
+              </select>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+              <div>
+                <label>Schwerpunkt</label>
+                <select id="orientSchwerpunkt">
+                  <option>-- wählen --</option><option selected>Technik</option>
+                  <option>Soziales</option><option>Wirtschaft</option>
+                  <option>Handwerk</option><option>IT</option><option>Gesundheit</option>
+                </select>
+              </div>
+              <div>
+                <label>Status</label>
+                <select id="orientStatus">
+                  <option>-- wählen --</option><option selected>Relativ klar</option>
+                  <option>Noch offen</option><option>Mehr Info nötig</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="padding:8px;min-height:0;overflow:hidden;display:flex;flex-direction:column;gap:7px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0;">
+            <div class="card-title" style="margin-bottom:0;">Die großen Fragen</div>
+            <button class="btn btn-primary" style="font-size:10px;padding:5px 14px;" onclick="zumKundenprofil()">Zum Kundenprofil →</button>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:7px;min-height:0;overflow:visible;">
+
+            <div class="question-shell">
+              <div class="question-side">
+                <div style="font-size:10px;color:var(--text-secondary);">Leitfrage 1</div>
+                <div class="question-text">Was soll durch dieses Gespräch für dich klarer oder besser werden?</div>
+                <div class="question-meta">Gesprächsauftrag, Zielklarheit, Orientierung</div>
+                <button class="btn btn-primary" style="margin-top:auto;padding:5px 10px;font-size:10px;" onclick="toggleRecordQ(this,'q1text')">AUFNAHME</button>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:5px;min-width:0;">
+                <div class="mini-label">Transkript / Notizen</div>
+                <div class="guided-field">
+                  <div class="field-guide" id="guide-q1text">Was soll nach dem Gespräch klarer sein?
+Wobei brauchst du heute Orientierung?
+Was wäre heute ein gutes Ergebnis?</div>
+                  <textarea id="q1text" oninput="updateGuideForField('q1text')" style="width:100%;min-height:102px;font-size:12px;line-height:1.45;"></textarea>
+                </div>
+              </div>
+              <div class="question-right">
+                <div><div class="mini-label">Essenz</div><textarea id="q1essenz" class="mini-essenz" placeholder="1 bis 3 Sätze Verdichtung..."></textarea></div>
+                <div>
+                  <div class="mini-label">Chips</div>
+                  <div class="mini-chips" id="chips-q1">
+                    <div class="mini-chip" onclick="toggleChip(this)">Orientierung gesucht</div>
+                    <div class="mini-chip" onclick="toggleChip(this)">Entscheidung treffen</div>
+                    <div class="mini-chip" onclick="toggleChip(this)">Infos zu Schule</div>
+                    <div class="mini-chip" onclick="toggleChip(this)">Infos zu Ausbildung</div>
+                    <div class="mini-chip" onclick="toggleChip(this)">Studium mitdenken</div>
+                    <div class="mini-chip" onclick="toggleChip(this)">Noch sehr unklar</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="question-shell">
+              <div class="question-side">
+                <div style="font-size:10px;color:var(--text-secondary);">Leitfrage 2</div>
+                <div class="question-text">Wie stellst du dir deine Zukunft vor — in Schule, Ausbildung, Studium oder Arbeit?</div>
+                <div class="question-meta">Zukunftsbild, Richtung, Alltagsperspektive</div>
+                <button class="btn btn-primary" style="margin-top:auto;padding:5px 10px;font-size:10px;" onclick="toggleRecordQ(this,'q2text')">AUFNAHME</button>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:5px;min-width:0;">
+                <div class="mini-label">Transkript / Notizen</div>
+                <div class="guided-field">
+                  <div class="field-guide" id="guide-q2text">Wie stellst du dir deine Zukunft gerade vor?
+Eher Schule, Ausbildung, Studium oder erst Orientierung?
+Wie soll dein Alltag später aussehen?</div>
+                  <textarea id="q2text" oninput="updateGuideForField('q2text')" style="width:100%;min-height:102px;font-size:12px;line-height:1.45;"></textarea>
+                </div>
+              </div>
+              <div class="question-right">
+                <div><div class="mini-label">Essenz</div><textarea id="q2essenz" class="mini-essenz" placeholder="1 bis 3 Sätze Verdichtung..."></textarea></div>
+                <div>
+                  <div class="mini-label">Chips</div>
+                  <div class="mini-chips" id="chips-q2">
+                    <div class="mini-chip" onclick="toggleChip(this)">Ausbildung</div>
+                    <div class="mini-chip" onclick="toggleChip(this)">Berufliche Schule</div>
+                    <div class="mini-chip" onclick="toggleChip(this)">Fachhochschulreife</div>
+                    <div class="mini-chip" onclick="toggleChip(this)">Abitur</div>
+                    <div class="mini-chip" onclick="toggleChip(this)">Studium</div>
+                    <div class="mini-chip" onclick="toggleChip(this)">Übergangslösung offen</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="question-shell">
+              <div class="question-side">
+                <div style="font-size:10px;color:var(--text-secondary);">Leitfrage 3</div>
+                <div class="question-text">Woran merkst du, dass ein Weg wirklich zu dir passt?</div>
+                <div class="question-meta">Passungskriterien, Bedingungen, Ausschlüsse</div>
+                <button class="btn btn-primary" style="margin-top:auto;padding:5px 10px;font-size:10px;" onclick="toggleRecordQ(this,'q3text')">AUFNAHME</button>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:5px;min-width:0;">
+                <div class="mini-label">Transkript / Notizen</div>
+                <div class="guided-field">
+                  <div class="field-guide" id="guide-q3text">Woran würdest du merken, dass ein Weg zu dir passt?
+Was sollte dabei auf jeden Fall vorkommen?
+Was wäre eher nichts für dich?</div>
+                  <textarea id="q3text" oninput="updateGuideForField('q3text')" style="width:100%;min-height:102px;font-size:12px;line-height:1.45;"></textarea>
+                </div>
+              </div>
+              <div class="question-right">
+                <div><div class="mini-label">Essenz</div><textarea id="q3essenz" class="mini-essenz" placeholder="1 bis 3 Sätze Verdichtung..."></textarea></div>
+                <div>
+                  <div class="mini-label">Chips</div>
+                  <div class="mini-chips" id="chips-q3">
+                    <div class="mini-chip" onclick="toggleChip(this)">Praxisnähe wichtig</div>
+                    <div class="mini-chip" onclick="toggleChip(this)">Sicherheit wichtig</div>
+                    <div class="mini-chip" onclick="toggleChip(this)">Kreativität wichtig</div>
+                    <div class="mini-chip" onclick="toggleChip(this)">Menschenkontakt wichtig</div>
+                    <div class="mini-chip" onclick="toggleChip(this)">Technik wichtig</div>
+                    <div class="mini-chip" onclick="toggleChip(this)">Struktur wichtig</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div><!-- /dashboard -->
+
+
+    <!-- ══════════════════════ KUNDENPROFIL ══════════════════════ -->
+    <div class="screen" id="screen-kundenprofil" style="grid-template-columns:230px 1fr 290px;gap:10px;">
+
+      <!-- LINKS: Stammdaten + Sitzungen -->
+      <div class="scol">
+        <div class="card">
+          <div class="card-title">Stammdaten</div>
+          <div style="display:flex;flex-direction:column;gap:7px;">
+            <div><label>Name</label><input type="text" id="kp-name" value="Justin Schmidt"></div>
+            <div><label>Straße / Nr.</label><input type="text" placeholder="Musterstraße 12"></div>
+            <div style="display:grid;grid-template-columns:1fr 1.6fr;gap:6px;">
+              <div><label>PLZ</label><input type="text" placeholder="70000"></div>
+              <div><label>Ort</label><input type="text" placeholder="Stuttgart"></div>
+            </div>
+            <div><label>Telefon</label><input type="tel" placeholder="+49 ..."></div>
+            <div><label>E-Mail</label><input type="email" placeholder="name@beispiel.de"></div>
+            <div><label>Schule / Klasse</label><input type="text" value="Realschule, Kl. 10"></div>
+            <div><label>Kurznotiz</label><textarea rows="2" placeholder="Kurze Beobachtung..."></textarea></div>
+            <button class="btn btn-ghost" style="width:100%;font-size:10px;" onclick="showToast('Stammdaten gespeichert ✓')">Speichern</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Sitzungen</div>
+          <div>
+            <div class="sitzung-row">
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:12px;font-weight:600;color:var(--text-primary);">15.03.2026</div>
+                <div style="font-size:11px;color:var(--text-dim);">Erstgespräch · Abgeschlossen</div>
+              </div>
+              <button class="btn btn-ghost" style="font-size:10px;padding:4px 7px;">Öffnen</button>
+              <button class="btn btn-subtle" style="font-size:10px;padding:4px 7px;">PDF</button>
+            </div>
+            <div class="sitzung-row">
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:12px;font-weight:600;color:var(--text-primary);">22.03.2026</div>
+                <div style="font-size:11px;color:var(--text-dim);">Vertiefung · In Bearbeitung</div>
+              </div>
+              <button class="btn btn-ghost" style="font-size:10px;padding:4px 7px;">Öffnen</button>
+              <button class="btn btn-subtle" style="font-size:10px;padding:4px 7px;">PDF</button>
+            </div>
+          </div>
+          <button class="btn btn-ghost" style="width:100%;margin-top:8px;font-size:10px;" onclick="showToast('Neue Sitzung angelegt')">+ Neue Sitzung</button>
+        </div>
+      </div>
+
+      <!-- MITTE: Unterlagen + Stellensuche -->
+      <div class="scol">
+        <div class="card">
+          <div class="card-title">Unterlagen <span>Dokumente des Kunden</span></div>
+          <div class="drop-zone" onclick="document.getElementById('kundeFileInput').click()" style="margin-bottom:10px;">
+            <div class="drop-zone-icon">📄</div>
+            <div class="drop-zone-text">Dateien hierhin ziehen oder klicken<br><span style="font-size:9px;">PDF, DOCX, JPG, PNG</span></div>
+          </div>
+          <input type="file" id="kundeFileInput" multiple accept=".pdf,.jpg,.jpeg,.png,.docx" style="display:none" onchange="showToast(this.files.length+' Datei(en) hochgeladen')">
+          <div class="table-scroll">
+            <table>
+              <thead><tr><th>Dateiname</th><th>Typ</th><th>Status</th><th>Mappe</th><th></th></tr></thead>
+              <tbody>
+                <tr>
+                  <td>Lebenslauf_Justin.pdf</td>
+                  <td><span class="badge badge-gray">Lebenslauf</span></td>
+                  <td><span class="badge badge-green">Verarbeitet</span></td>
+                  <td><input type="checkbox" checked style="width:14px;height:14px;accent-color:var(--primary);"></td>
+                  <td><div style="display:flex;gap:4px;">
+                    <button class="btn btn-ghost" style="font-size:9px;padding:3px 6px;" onclick="showToast('Vorschau öffnet...')">👁</button>
+                    <button class="btn btn-red" style="font-size:9px;padding:3px 6px;" onclick="bestaetigungsDialog('Lebenslauf_Justin.pdf löschen?','',this.closest('tr').remove.bind(this.closest('tr')))">🗑</button>
+                  </div></td>
+                </tr>
+                <tr>
+                  <td>Zeugnis_Kl9.pdf</td>
+                  <td><span class="badge badge-gray">Zeugnis</span></td>
+                  <td><span class="badge badge-orange">Ausstehend</span></td>
+                  <td><input type="checkbox" style="width:14px;height:14px;accent-color:var(--primary);"></td>
+                  <td><div style="display:flex;gap:4px;">
+                    <button class="btn btn-ghost" style="font-size:9px;padding:3px 6px;" onclick="showToast('Vorschau öffnet...')">👁</button>
+                    <button class="btn btn-red" style="font-size:9px;padding:3px 6px;" onclick="bestaetigungsDialog('Zeugnis_Kl9.pdf löschen?','',this.closest('tr').remove.bind(this.closest('tr')))">🗑</button>
+                  </div></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div style="display:flex;gap:6px;margin-top:8px;">
+            <button class="btn btn-primary" style="flex:1;font-size:10px;" onclick="showToast('Dokumente werden verarbeitet...')">Verarbeiten</button>
+            <button class="btn btn-ghost" style="flex:1;font-size:10px;" onclick="showToast('Vorschau öffnet...')">Vorschau</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Stellensuche <span>Online-Recherche</span></div>
+          <div class="info-box" style="margin-bottom:8px;">Anbindung an offizielle APIs (BA, IHK, HWK) folgt in einer späteren Version.</div>
+          <div style="display:grid;grid-template-columns:1fr auto;gap:6px;align-items:end;margin-bottom:8px;">
+            <div>
+              <label>Bevorzugter Weg</label>
+              <input type="text" id="suchZiel" value="Schreiner / Tischler" placeholder="z.B. KFZ-Mechatroniker">
+            </div>
+            <div>
+              <label>Region</label>
+              <input type="text" id="suchRegion" placeholder="z.B. Stuttgart, 30 km" value="Stuttgart, 30 km" style="width:140px;">
+            </div>
+          </div>
+          <button class="btn btn-primary" style="width:100%;font-size:10px;" onclick="starteRecherche()" id="recherchBtn">Stellen suchen</button>
+          <div id="rechercheErgebnisse" style="display:none;margin-top:10px;">
+            <div style="font-size:11px;font-weight:600;color:var(--text-primary);margin-bottom:6px;">Ergebnisse prüfen — auswählen was passt:</div>
+            <div class="recherche-result"><input type="checkbox" id="r1"><div class="recherche-result-body"><div class="recherche-result-title">Tischler/in – Schreinerei Müller GmbH</div><div class="recherche-result-meta">Stuttgart-Vaihingen · Start 01.09.2026 · IHK</div></div></div>
+            <div class="recherche-result"><input type="checkbox" id="r2" checked><div class="recherche-result-body"><div class="recherche-result-title">Holzmechaniker/in – Holzwerk Bauer KG</div><div class="recherche-result-meta">Leonberg · Start 01.08.2026 · Ausbildung.de</div></div></div>
+            <div class="recherche-result"><input type="checkbox" id="r3"><div class="recherche-result-body"><div class="recherche-result-title">Tischler/in – Einrichtungshaus König</div><div class="recherche-result-meta">Böblingen · Start 01.09.2026 · BA</div></div></div>
+            <button class="btn btn-primary" style="width:100%;margin-top:8px;font-size:10px;" onclick="uebernehmeStellenauswahl()">Ausgewählte Stellen übernehmen</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- RECHTS: Beratungsergebnis + Workflow -->
+      <div class="scol">
+
+        <!-- BERATUNGSERGEBNIS -->
+        <div class="card">
+          <div class="card-title">Beratungsergebnis</div>
+          <div style="display:flex;flex-direction:column;gap:7px;">
+            <div class="feld-auto" id="feld-zielrichtung">
+              <div class="feld-auto-label" id="hint-zielrichtung" style="display:none;">⟵ aus Dashboard</div>
+              <label>Zielrichtung</label>
+              <input type="text" id="erg-zielrichtung" value="Duale Ausbildung">
+            </div>
+            <div class="feld-auto" id="feld-weg">
+              <div class="feld-auto-label" id="hint-weg" style="display:none;">⟵ aus Dashboard</div>
+              <label>Bevorzugter Weg</label>
+              <input type="text" id="erg-weg" value="Schreiner / Tischler">
+            </div>
+            <div class="feld-auto" id="feld-kriterien">
+              <div class="feld-auto-label" id="hint-kriterien" style="display:none;">⟵ aus Dashboard</div>
+              <label>Wichtige Kriterien</label>
+              <textarea id="erg-kriterien" rows="2">Praxisnah, Handwerk, Region Stuttgart</textarea>
+            </div>
+            <div>
+              <label>Nächster Schritt</label>
+              <input type="text" id="erg-naechster" placeholder="z.B. Bewerbung bis 30.04.">
+            </div>
+            <div style="font-family:var(--mono);font-size:10px;color:var(--text-dim);" id="erg-stand">Stand: –</div>
+          </div>
+        </div>
+
+        <!-- ZENTRALES ERGEBNISFENSTER -->
+        <div class="ergebnis-fenster" id="ergebnisFenster" style="display:none;">
+          <div class="ergebnis-fenster-titel" id="efTitel">Ergebnis</div>
+          <div id="efTabs"></div>
+          <div id="efInhalt"></div>
+        </div>
+
+        <!-- WORKFLOW NACH DER SITZUNG -->
+        <div class="workflow-karte">
+          <div class="workflow-karte-titel">
+            <span>🔄</span> Nach der Sitzung
+            <span style="font-size:10px;font-weight:400;color:var(--text-dim);margin-left:auto;">Schritte manuell auslösen</span>
+          </div>
+
+          <!-- S1 -->
+          <div class="workflow-schritt" id="ws1">
+            <div class="workflow-schritt-header">
+              <div class="workflow-schritt-nr" id="ws1-nr">1</div>
+              <div class="workflow-schritt-titel">Daten zusammenführen <span class="offline-badge">⬡ offline</span></div>
+              <button class="btn btn-primary" style="font-size:10px;padding:4px 10px;" onclick="schritt1()">Starten</button>
+            </div>
+          </div>
+
+          <!-- S2 -->
+          <div class="workflow-schritt" id="ws2">
+            <div class="workflow-schritt-header">
+              <div class="workflow-schritt-nr" id="ws2-nr">2</div>
+              <div class="workflow-schritt-titel">Transkript analysieren</div>
+              <button class="btn btn-subtle" style="font-size:10px;padding:4px 10px;" id="ws2-btn" onclick="schritt2()" disabled>Analysieren</button>
+            </div>
+            <div class="workflow-schritt-voraus" id="ws2-voraus">⚠ Erst Schritt 1 abschließen</div>
+          </div>
+
+          <!-- S3 -->
+          <div class="workflow-schritt" id="ws3">
+            <div class="workflow-schritt-header">
+              <div class="workflow-schritt-nr" id="ws3-nr">3</div>
+              <div class="workflow-schritt-titel">Protokoll & ToDo <span class="offline-badge">⬡ offline</span></div>
+              <button class="btn btn-subtle" style="font-size:10px;padding:4px 10px;" id="ws3-btn" onclick="schritt3()" disabled>Erstellen</button>
+            </div>
+            <div class="workflow-schritt-voraus" id="ws3-voraus">⚠ Erst Schritte 1+2 abschließen</div>
+          </div>
+
+          <!-- S4 -->
+          <div class="workflow-schritt" id="ws4">
+            <div class="workflow-schritt-header">
+              <div class="workflow-schritt-nr" id="ws4-nr">4</div>
+              <div class="workflow-schritt-titel">Bewerbungsunterlagen <span style="font-size:10px;color:var(--text-dim);font-weight:400;">(optional)</span></div>
+              <button class="btn btn-subtle" style="font-size:10px;padding:4px 10px;" id="ws4-btn" onclick="schritt4()" disabled>Erstellen</button>
+            </div>
+            <div class="workflow-schritt-voraus" id="ws4-voraus">⚠ Erst Schritt 3 freigeben</div>
+          </div>
+
+          <!-- S5 -->
+          <div class="workflow-schritt" id="ws5">
+            <div class="workflow-schritt-header">
+              <div class="workflow-schritt-nr" id="ws5-nr">5</div>
+              <div class="workflow-schritt-titel">Exportieren <span class="offline-badge">⬡ offline</span></div>
+              <button class="btn btn-subtle" style="font-size:10px;padding:4px 10px;" id="ws5-btn" onclick="schritt5()" disabled>Exportieren</button>
+            </div>
+            <div class="workflow-schritt-voraus" id="ws5-voraus">⚠ Erst Schritt 3 abschließen</div>
+          </div>
+
+        </div><!-- /workflow -->
+      </div>
+    </div><!-- /kundenprofil -->
+
+
+    <!-- ══════════════════════ WISSENSBASIS ══════════════════════ -->
+    <div class="screen" id="screen-wissensbasis" style="grid-template-columns:1fr 290px;gap:10px;">
+      <div class="scol">
+        <div class="card">
+          <div class="card-title">Wissensbasis durchsuchen</div>
+          <div class="card-subtitle">Suche in lokalem Dokumentenbestand — z.B. Förderprogramme, Fristen, Berufsbilder</div>
+          <div class="search-wrap" style="margin-bottom:10px;">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="wbSearchInput" placeholder="Suchbegriff eingeben..." oninput="wbSuche(this.value)" style="padding-left:32px;font-size:13px;background:white;border:2px solid var(--border-bright);border-radius:8px;">
+          </div>
+          <div id="wbSuchergebnisse">
+            <div style="text-align:center;padding:20px;font-family:var(--mono);font-size:11px;color:var(--text-dim);border:1px dashed var(--border);border-radius:6px;">Suchbegriff eingeben um Dokumente zu durchsuchen</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Dokumente verwalten</div>
+          <div class="drop-zone" onclick="document.getElementById('wbFileInput').click()" style="margin-bottom:10px;">
+            <div class="drop-zone-icon">📚</div>
+            <div class="drop-zone-text">PDFs, TXT, DOCX hierhin ziehen<br><span style="font-size:9px;">Bis zu 500 Dateien · lokal indiziert</span></div>
+          </div>
+          <input type="file" id="wbFileInput" multiple accept=".pdf,.txt,.docx" style="display:none" onchange="showToast(this.files.length+' Dokument(e) werden indiziert...')">
+          <div class="table-scroll">
+            <table>
+              <thead><tr><th>Dateiname</th><th>Kategorie</th><th>Prüfen bis</th><th>Status</th><th></th></tr></thead>
+              <tbody id="wbDokListe">
+                <tr><td>Regionalschrift_Stuttgart_2026.pdf</td><td><span class="badge badge-orange">Zeitkritisch</span></td><td style="color:var(--orange);">Jul. 2026</td><td><span class="badge badge-green">Indiziert</span></td><td><button class="btn btn-red" style="font-size:9px;padding:3px 6px;" onclick="bestaetigungsDialog('Dokument löschen?','Regionalschrift_Stuttgart_2026.pdf wird dauerhaft entfernt.',()=>this.closest('tr').remove())">🗑</button></td></tr>
+                <tr><td>Ausbildungsberufe_BW_2025.pdf</td><td><span class="badge badge-gray">Langlebig</span></td><td style="color:var(--text-dim);">2027</td><td><span class="badge badge-green">Indiziert</span></td><td><button class="btn btn-red" style="font-size:9px;padding:3px 6px;" onclick="bestaetigungsDialog('Dokument löschen?','Ausbildungsberufe_BW_2025.pdf wird dauerhaft entfernt.',()=>this.closest('tr').remove())">🗑</button></td></tr>
+                <tr><td>Fristen_Ausbildung_2026.pdf</td><td><span class="badge badge-orange">Zeitkritisch</span></td><td style="color:var(--orange);">Dez. 2026</td><td><span class="badge badge-orange">Ausstehend</span></td><td><button class="btn btn-red" style="font-size:9px;padding:3px 6px;" onclick="bestaetigungsDialog('Dokument löschen?','Fristen_Ausbildung_2026.pdf wird dauerhaft entfernt.',()=>this.closest('tr').remove())">🗑</button></td></tr>
+                <tr><td>Förderübersicht_BaWü.pdf</td><td><span class="badge badge-orange">Zeitkritisch</span></td><td style="color:var(--red);">Überfällig</td><td><span class="badge badge-red">Veraltet</span></td><td><button class="btn btn-red" style="font-size:9px;padding:3px 6px;" onclick="bestaetigungsDialog('Dokument löschen?','Förderübersicht_BaWü.pdf wird dauerhaft entfernt.',()=>this.closest('tr').remove())">🗑</button></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div style="display:flex;gap:6px;margin-top:8px;">
+            <button class="btn btn-primary" style="flex:1;font-size:10px;" onclick="showToast('Indizierung gestartet...')">Index aktualisieren</button>
+            <button class="btn btn-ghost" style="flex:1;font-size:10px;" onclick="document.getElementById('wbFileInput').click()">Datei hinzufügen</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Web-Quellen <span>Ergänzende Online-Referenzen</span></div>
+          <div class="card-subtitle">Links zu relevanten Seiten, die nicht als PDF vorliegen.</div>
+          <div class="table-scroll" style="margin-bottom:8px;">
+            <table>
+              <thead><tr><th>Titel</th><th>Kategorie</th><th>Prüfen bis</th><th></th></tr></thead>
+              <tbody id="webQuellenListe">
+                <tr><td><a href="#" onclick="return false;" style="color:var(--primary);text-decoration:none;">Ausbildung.de — Suche BW</a></td><td><span class="badge badge-orange">Zeitkritisch</span></td><td style="color:var(--text-dim);">Dez. 2026</td><td><button class="btn btn-red" style="font-size:9px;padding:3px 6px;" onclick="bestaetigungsDialog('Web-Quelle löschen?','Dieser Eintrag wird entfernt.',()=>this.closest('tr').remove())">🗑</button></td></tr>
+                <tr><td><a href="#" onclick="return false;" style="color:var(--primary);text-decoration:none;">IHK Stuttgart — Ausbildungsberufe</a></td><td><span class="badge badge-gray">Langlebig</span></td><td style="color:var(--text-dim);">2027</td><td><button class="btn btn-red" style="font-size:9px;padding:3px 6px;" onclick="bestaetigungsDialog('Web-Quelle löschen?','Dieser Eintrag wird entfernt.',()=>this.closest('tr').remove())">🗑</button></td></tr>
+                <tr><td><a href="#" onclick="return false;" style="color:var(--primary);text-decoration:none;">Bundesagentur — KURSNET</a></td><td><span class="badge badge-gray">Langlebig</span></td><td style="color:var(--text-dim);">2027</td><td><button class="btn btn-red" style="font-size:9px;padding:3px 6px;" onclick="bestaetigungsDialog('Web-Quelle löschen?','Dieser Eintrag wird entfernt.',()=>this.closest('tr').remove())">🗑</button></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div id="webQuelleForm" style="display:none;border:1px solid var(--border-bright);border-radius:6px;padding:10px;background:var(--bg-base);margin-bottom:8px;">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px;">
+              <div style="grid-column:1/-1;"><label>URL</label><input type="text" id="wq-url" placeholder="https://..."></div>
+              <div><label>Titel</label><input type="text" id="wq-titel" placeholder="Beschreibender Name"></div>
+              <div><label>Kategorie</label><select id="wq-kat"><option>Langlebig</option><option>Zeitkritisch</option></select></div>
+              <div><label>Prüfen bis</label><input type="text" id="wq-datum" placeholder="z.B. Dez. 2026"></div>
+            </div>
+            <div style="display:flex;gap:6px;">
+              <button class="btn btn-primary" style="flex:1;font-size:10px;" onclick="webQuelleHinzufuegen()">Hinzufügen</button>
+              <button class="btn btn-ghost" style="flex:1;font-size:10px;" onclick="document.getElementById('webQuelleForm').style.display='none'">Abbrechen</button>
+            </div>
+          </div>
+          <button class="btn btn-ghost" style="width:100%;font-size:10px;" onclick="document.getElementById('webQuelleForm').style.display='block'">+ Web-Quelle hinzufügen</button>
+        </div>
+      </div>
+
+      <div class="scol">
+        <div class="card">
+          <div class="card-title">Index-Status</div>
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <div class="stat-box"><div class="stat-num">312</div><div class="stat-label">Dokumente indiziert</div></div>
+            <div class="g2">
+              <div class="stat-box"><div class="stat-num" style="font-size:16px;">287</div><div class="stat-label">Aktuell</div></div>
+              <div class="stat-box"><div class="stat-num" style="font-size:16px;color:var(--red);">4</div><div class="stat-label">Veraltet</div></div>
+            </div>
+            <div class="info-box ok" style="text-align:center;">Suche: Bereit</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Kategorien</div>
+          <div style="display:flex;flex-direction:column;gap:6px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;"><span style="display:flex;align-items:center;gap:6px;"><span class="badge badge-gray">Langlebig</span>Berufsbilder, Grundlagen</span><span style="font-family:var(--mono);font-weight:700;color:var(--primary);">198</span></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;"><span style="display:flex;align-items:center;gap:6px;"><span class="badge badge-orange">Zeitkritisch</span>Fristen, Flyer, Jahresinfos</span><span style="font-family:var(--mono);font-weight:700;color:var(--orange);">114</span></div>
+          </div>
+          <hr class="divider">
+          <div style="font-size:11px;color:var(--text-dim);line-height:1.6;">Zeitkritische Dokumente jährlich prüfen. Veraltet-Markierung erscheint nach Ablauf des Prüfdatums.</div>
+        </div>
+      </div>
+    </div><!-- /wissensbasis -->
+
+
+    <!-- ══════════════════════ AUSWERTUNG ══════════════════════ -->
+    <div class="screen" id="screen-auswertung" style="grid-template-columns:1fr 1fr;gap:10px;">
+      <div class="scol">
+        <div class="card">
+          <div class="card-title">Beratungsübersicht</div>
+          <div class="g4" style="margin-bottom:12px;">
+            <div class="stat-box"><div class="stat-num">47</div><div class="stat-label">Gesamt</div></div>
+            <div class="stat-box"><div class="stat-num">8</div><div class="stat-label">Diesen Monat</div></div>
+            <div class="stat-box"><div class="stat-num" style="color:var(--orange);">3</div><div class="stat-label">In Bearbeitung</div></div>
+            <div class="stat-box"><div class="stat-num" style="color:var(--text-dim);">36</div><div class="stat-label">Abgeschlossen</div></div>
+          </div>
+          <div style="font-family:var(--mono);font-size:10px;color:var(--text-dim);margin-bottom:6px;">Beratungen je Schulform</div>
+          <div class="bar-wrap">
+            <div class="bar-col"><div class="bar" style="height:40%;background:var(--border-bright);"></div><div class="bar-label">Gymn.</div></div>
+            <div class="bar-col"><div class="bar" style="height:70%;background:var(--primary);opacity:0.8;"></div><div class="bar-label">Realsch.</div></div>
+            <div class="bar-col"><div class="bar" style="height:50%;background:var(--border-bright);"></div><div class="bar-label">Hauptsch.</div></div>
+            <div class="bar-col"><div class="bar" style="height:20%;background:var(--border-bright);"></div><div class="bar-label">Sonstige</div></div>
+          </div>
+          <hr class="divider">
+          <div style="font-family:var(--mono);font-size:10px;color:var(--text-dim);margin-bottom:5px;">Sitzungen pro Woche (12 Wochen)</div>
+          <div class="sparkline">
+            <div class="spark-bar" style="height:40%"></div><div class="spark-bar" style="height:55%"></div><div class="spark-bar" style="height:60%"></div><div class="spark-bar" style="height:80%"></div><div class="spark-bar" style="height:65%"></div><div class="spark-bar" style="height:100%"></div><div class="spark-bar" style="height:50%"></div><div class="spark-bar" style="height:70%"></div><div class="spark-bar" style="height:75%"></div><div class="spark-bar" style="height:90%"></div><div class="spark-bar" style="height:85%"></div><div class="spark-bar" style="height:95%"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Erstellte Dokumente</div>
+          <div class="g3">
+            <div class="stat-box"><div class="stat-num">31</div><div class="stat-label">Anschreiben</div></div>
+            <div class="stat-box"><div class="stat-num">28</div><div class="stat-label">Lebensläufe</div></div>
+            <div class="stat-box"><div class="stat-num">19</div><div class="stat-label">Mappen</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="scol">
+        <div class="card">
+          <div class="card-title">Letzte Sitzungen</div>
+          <div class="table-scroll">
+            <table>
+              <thead><tr><th>Datum</th><th>Kunde</th><th>Status</th></tr></thead>
+              <tbody>
+                <tr><td>15.03.2026</td><td>Justin Schmidt</td><td><span class="badge badge-orange">In Bearbeitung</span></td></tr>
+                <tr><td>12.03.2026</td><td>Lena Müller</td><td><span class="badge badge-green">Abgeschlossen</span></td></tr>
+                <tr><td>10.03.2026</td><td>Tobias Kern</td><td><span class="badge badge-green">Abgeschlossen</span></td></tr>
+                <tr><td>08.03.2026</td><td>Ayla Demir</td><td><span class="badge badge-green">Abgeschlossen</span></td></tr>
+                <tr><td>05.03.2026</td><td>Noah Fischer</td><td><span class="badge badge-orange">In Bearbeitung</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <button class="btn btn-ghost" style="width:100%;padding:10px;font-size:10px;" onclick="showToast('Auswertung wird exportiert...')">📊 Auswertung exportieren</button>
+      </div>
+    </div><!-- /auswertung -->
+
+
+    <!-- ══════════════════════ EINSTELLUNGEN ══════════════════════ -->
+    <div class="screen" id="screen-einstellungen" style="grid-template-columns:1fr 1fr;gap:10px;">
+      <div class="scol">
+
+        <div class="card">
+          <div class="card-title">API-Verbindungen</div>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <div>
+              <label>Anthropic API-Schlüssel</label>
+              <div style="display:flex;gap:5px;"><input type="password" id="anthropic-key" placeholder="sk-ant-..." style="font-family:var(--mono);font-size:11px;"><button class="btn btn-ghost" style="padding:4px 8px;flex-shrink:0;" onclick="toggleApiKey('anthropic-key')">👁</button></div>
+              <div class="info-box ok" style="margin-top:5px;">Status: Verbunden</div>
+            </div>
+            <div>
+              <label>OpenAI API-Schlüssel <span style="font-weight:400;color:var(--text-dim);">(optional)</span></label>
+              <div style="display:flex;gap:5px;"><input type="password" id="openai-key" placeholder="sk-..." style="font-family:var(--mono);font-size:11px;"><button class="btn btn-ghost" style="padding:4px 8px;flex-shrink:0;" onclick="toggleApiKey('openai-key')">👁</button></div>
+              <div class="info-box" style="margin-top:5px;">Status: Nicht konfiguriert</div>
+            </div>
+            <div style="border:1px solid var(--border);border-radius:5px;padding:8px;">
+              <div style="font-size:11px;font-weight:700;color:var(--text-dim);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px;">Platzhalter für weitere APIs</div>
+              <input type="text" placeholder="API-Name" style="margin-bottom:5px;font-size:11px;">
+              <input type="password" placeholder="API-Schlüssel" style="font-size:11px;">
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Lokales Sprachmodell <span>Offline-Fallback</span></div>
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <div class="toggle-wrap">
+              <label class="toggle"><input type="checkbox" id="llm-toggle" onchange="toggleLLM(this)"><span class="toggle-slider"></span></label>
+              <span class="toggle-label" id="llm-toggle-label">Deaktiviert</span>
+            </div>
+            <div class="info-box">Für Aufgaben die offline möglich sind (erkennbar am <span class="offline-badge">⬡ offline</span> Badge): Daten zusammenführen, Protokoll Kurzfassung, ToDo-Liste, Export. Für Bewerbungstexte und Transkriptanalyse wird die API benötigt.</div>
+            <div id="llm-config" style="display:none;flex-direction:column;gap:6px;">
+              <div><label>Modell</label>
+                <select id="llm-modell">
+                  <option>Phi-3 Mini 3.8B (4-bit) ← empfohlen für 16GB</option>
+                  <option>Llama 3.2 3B (4-bit)</option>
+                  <option>Mistral 7B (4-bit)</option>
+                </select>
+              </div>
+              <div class="info-box ok" id="llm-status">Status: Bereit</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Pfade & Ablage</div>
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <div><label>Wissensbasis (PDFs)</label><div style="display:flex;gap:5px;"><input type="text" value="/data/SPoT/Wissensbasis/" style="font-size:11px;"><button class="btn btn-ghost" style="padding:4px 8px;flex-shrink:0;">📁</button></div></div>
+            <div><label>Kundendokumente</label><div style="display:flex;gap:5px;"><input type="text" value="/data/SPoT/Kunden/" style="font-size:11px;"><button class="btn btn-ghost" style="padding:4px 8px;flex-shrink:0;">📁</button></div></div>
+            <div><label>Lokaler Export-Ordner</label><div style="display:flex;gap:5px;"><input type="text" value="/data/SPoT/Exporte/" style="font-size:11px;"><button class="btn btn-ghost" style="padding:4px 8px;flex-shrink:0;">📁</button></div></div>
+            <div><label>Nextcloud-Ordner <span style="font-weight:400;color:var(--text-dim);">(Ein- & Ausgabe)</span></label><div style="display:flex;gap:5px;"><input type="text" placeholder="/Nextcloud/SPoT/" style="font-size:11px;"><button class="btn btn-ghost" style="padding:4px 8px;flex-shrink:0;">📁</button></div><div class="info-box" style="margin-top:5px;font-size:10px;">Eingang: Kundenunterlagen · Ausgang: Mappe, ToDo, Zusammenfassung</div></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Export & Ablage <span>Regeln</span></div>
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <div>
+              <label>Dateinamens-Schema</label>
+              <div class="info-box ok" style="font-family:var(--mono);font-size:11px;">Name_Datum_Dokumenttyp<br><span style="opacity:0.8;">Beispiel: Schmidt_Justin_2026-03-15_Protokoll.pdf</span></div>
+            </div>
+            <div>
+              <label>Ordnerstruktur</label>
+              <div class="info-box ok" style="font-family:var(--mono);font-size:11px;">/Kunden/Name_Vorname/JJJJ-MM-TT/</div>
+            </div>
+            <div><label>Standard-Exportformat</label>
+              <select><option>PDF</option><option>DOCX</option></select>
+            </div>
+            <div><label>Beratungsort (für Protokoll-Header)</label>
+              <select><option>Videocall</option><option>Vor Ort — Schule</option><option>Vor Ort — Büro</option><option>Telefon</option></select>
+            </div>
+            <div><label>Standard-Region Stellensuche</label>
+              <input type="text" placeholder="z.B. Stuttgart, 30 km" value="Stuttgart, 30 km">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="scol">
+        <div class="card">
+          <div class="card-title">Transkription <span>Whisper STT · lokal</span></div>
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <div><label>Whisper-Modell</label><select><option>Large-v3 (6-bit) ← aktiv</option><option>Medium (8-bit)</option><option>Small (fp16)</option></select></div>
+            <div><label>Audio-Quelle</label><select><option>🎙 Mikrofon (System)</option><option>OBS Virtual Audio</option></select></div>
+            <div class="check-item"><input type="checkbox" checked> Sprecher-Trennung (Multi-Track / OBS)</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">OBS & Aufnahme</div>
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <div><label>Aufnahme-Format</label><select><option>MKV (Multi-Track) ← empfohlen</option><option>MP4</option></select></div>
+            <div class="info-box ok">OBS-Status: Verbunden</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Stellenrecherche <span>APIs</span></div>
+          <div class="info-box" style="margin-bottom:10px;">Technische Anbindung folgt. APIs bereits konfigurierbar — aktivieren wenn verfügbar.</div>
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div>
+                <div style="font-size:12px;font-weight:700;color:var(--text-primary);">Bundesagentur für Arbeit</div>
+                <div style="font-size:10px;color:var(--text-dim);">Ausbildungsstellenbörse API</div>
+              </div>
+              <label class="toggle" style="flex-shrink:0;"><input type="checkbox"><span class="toggle-slider"></span></label>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div>
+                <div style="font-size:12px;font-weight:700;color:var(--text-primary);">IHK Lehrstellenbörse</div>
+                <div style="font-size:10px;color:var(--text-dim);">IHK Stuttgart API</div>
+              </div>
+              <label class="toggle" style="flex-shrink:0;"><input type="checkbox"><span class="toggle-slider"></span></label>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div>
+                <div style="font-size:12px;font-weight:700;color:var(--text-primary);">HWK Lehrstellenbörse</div>
+                <div style="font-size:10px;color:var(--text-dim);">Handwerkskammer API</div>
+              </div>
+              <label class="toggle" style="flex-shrink:0;"><input type="checkbox"><span class="toggle-slider"></span></label>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div>
+                <div style="font-size:12px;font-weight:700;color:var(--text-primary);">Ausbildung.de</div>
+                <div style="font-size:10px;color:var(--text-dim);">Ausbildung.de Stellensuche API</div>
+              </div>
+              <label class="toggle" style="flex-shrink:0;"><input type="checkbox"><span class="toggle-slider"></span></label>
+            </div>
+          </div>
+        </div>
+
+        <button class="btn btn-primary" style="width:100%;padding:10px;font-size:11px;" onclick="showToast('Einstellungen gespeichert ✓')">💾 Einstellungen speichern</button>
+      </div>
+    </div><!-- /einstellungen -->
+
+  </div><!-- /content -->
+</div><!-- /layout -->
+
+<div id="toastEl" style="position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--bg-card);border:1px solid var(--primary);border-radius:6px;padding:10px 20px;font-family:var(--mono);font-size:11px;color:var(--primary);transition:transform 0.3s;pointer-events:none;z-index:999;white-space:nowrap;box-shadow:0 4px 16px rgba(0,0,0,0.1);"></div>
+
+<script>
+// ── NAVIGATION ──
+function showScreen(id, el) {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('screen-'+id).classList.add('active');
+  el.classList.add('active');
+}
+function zumKundenprofil() {
+  showScreen('kundenprofil', document.querySelector('[onclick*="kundenprofil"]'));
+}
+
+// ── CONFIRM MODAL ──
+let _modalCallback = null;
+function bestaetigungsDialog(titel, text, callback) {
+  document.getElementById('modalTitel').textContent = titel;
+  document.getElementById('modalText').textContent = text || 'Diese Aktion kann nicht rückgängig gemacht werden.';
+  _modalCallback = callback;
+  document.getElementById('confirmModal').classList.add('open');
+}
+document.getElementById('modalBestaetigen').onclick = function() {
+  document.getElementById('confirmModal').classList.remove('open');
+  if (_modalCallback) { _modalCallback(); _modalCallback = null; showToast('Gelöscht ✓'); }
+};
+function modalAbbrechen() {
+  document.getElementById('confirmModal').classList.remove('open');
+  _modalCallback = null;
+}
+
+// ── ERGEBNISFENSTER ──
+function zeigeErgebnisFenster(titel, tabs) {
+  const ef = document.getElementById('ergebnisFenster');
+  document.getElementById('efTitel').textContent = titel;
+  ef.style.display = 'block';
+  // Tabs
+  const tabEl = document.getElementById('efTabs');
+  const inhEl = document.getElementById('efInhalt');
+  if (tabs.length === 1) {
+    tabEl.innerHTML = '';
+    inhEl.innerHTML = tabs[0].inhalt;
+    inhEl.className = 'ergebnis-inhalt active';
+  } else {
+    tabEl.innerHTML = tabs.map((t,i)=>`<span class="ergebnis-tab${i===0?' active':''}" onclick="wechsleTab(${i})">${t.label}</span>`).join('');
+    inhEl.innerHTML = tabs.map((t,i)=>`<div class="ergebnis-inhalt${i===0?' active':''}" id="efi-${i}">${t.inhalt}</div>`).join('');
+  }
+  ef.scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+function wechsleTab(idx) {
+  document.querySelectorAll('.ergebnis-tab').forEach((t,i)=>t.classList.toggle('active',i===idx));
+  document.querySelectorAll('.ergebnis-inhalt').forEach((t,i)=>t.classList.toggle('active',i===idx));
+}
+
+// ── WORKFLOW ──
+let ws1done=false, ws2done=false, ws3done=false;
+
+function schritt1() {
+  const name   = document.getElementById('clientName')?.value || 'Justin Schmidt';
+  const age    = document.getElementById('clientAge')?.value || '16';
+  const start  = document.getElementById('szStart')?.value || '–';
+  const ziel   = document.getElementById('szZiel')?.value || '–';
+  const rich   = document.getElementById('orientRichtung')?.value || '–';
+  const schw   = document.getElementById('orientSchwerpunkt')?.value || '–';
+  const stat   = document.getElementById('orientStatus')?.value || '–';
+  const e1     = document.getElementById('q1essenz')?.value || '(keine Eingabe)';
+  const e2     = document.getElementById('q2essenz')?.value || '(keine Eingabe)';
+  const e3     = document.getElementById('q3essenz')?.value || '(keine Eingabe)';
+  const chips1 = [...document.querySelectorAll('#chips-q1 .mini-chip.active')].map(c=>c.textContent).join(', ')||'–';
+  const chips2 = [...document.querySelectorAll('#chips-q2 .mini-chip.active')].map(c=>c.textContent).join(', ')||'–';
+  const chips3 = [...document.querySelectorAll('#chips-q3 .mini-chip.active')].map(c=>c.textContent).join(', ')||'–';
+
+  // Beratungsergebnis befüllen mit Herkunfts-Markierung
+  function setAutoFeld(id, hintId, val) {
+    const el = document.getElementById(id);
+    const hint = document.getElementById(hintId);
+    if (el) el.value = val;
+    if (hint) hint.style.display = 'block';
+    const wrap = document.getElementById('feld-'+id.replace('erg-',''));
+    if (wrap) { const inp = wrap.querySelector('input,textarea'); if(inp){inp.style.borderColor='rgba(46,156,86,0.5)';inp.style.background='rgba(46,156,86,0.05)';} }
+  }
+  setAutoFeld('erg-zielrichtung','hint-zielrichtung', rich !== '–' ? rich : 'Ausbildung');
+  setAutoFeld('erg-weg','hint-weg', schw !== '–' ? schw : '–');
+  setAutoFeld('erg-kriterien','hint-kriterien', [chips2,chips3].filter(c=>c!=='–').join(' · ')||'–');
+  document.getElementById('erg-naechster').value = 'Nächste Schritte klären';
+  document.getElementById('erg-stand').textContent = 'Stand: '+new Date().toLocaleDateString('de-DE');
+
+  zeigeErgebnisFenster('Schritt 1 — Zusammenführung', [{
+    label:'Übersicht',
+    inhalt:`<div class="analyse-block">
+      <div class="analyse-block-titel">Kunde</div>
+      <div class="analyse-text">${name}, ${age} Jahre · ${document.getElementById('dSchulart')?.value||''}</div>
+    </div>
+    <div class="analyse-block">
+      <div class="analyse-block-titel">Bildungsweg</div>
+      <div class="analyse-text">${start} → ${ziel} · ${rich} (${schw})</div>
+    </div>
+    <div class="analyse-block">
+      <div class="analyse-block-titel">Essenzen</div>
+      <div class="analyse-text">1: ${e1}\n2: ${e2}\n3: ${e3}</div>
+    </div>
+    <div class="analyse-block">
+      <div class="analyse-block-titel">Aktive Chips</div>
+      <div class="analyse-text">${chips1||'–'}\n${chips2||'–'}\n${chips3||'–'}</div>
+    </div>
+    <div class="check-item" style="margin-top:8px;"><input type="checkbox" id="ws1-freigabe" onchange="ws1Freigabe(this)"> <label style="font-weight:700;margin-bottom:0;">Zusammenführung bestätigt</label></div>`
+  }]);
+  document.getElementById('ws1-nr').classList.add('laufend');
+  showToast('Daten zusammengeführt ✓');
+}
+
+function ws1Freigabe(cb) {
+  if (cb.checked) {
+    ws1done = true;
+    document.getElementById('ws1-nr').classList.remove('laufend');
+    document.getElementById('ws1-nr').classList.add('done');
+    document.getElementById('ws2-btn').disabled = false;
+    document.getElementById('ws2-btn').className = 'btn btn-primary';
+    document.getElementById('ws2-voraus').classList.remove('sichtbar');
+    showToast('Schritt 1 freigegeben — Schritt 2 bereit');
+  }
+}
+
+function schritt2() {
+  const btn = document.getElementById('ws2-btn');
+  btn.textContent = '⏳';
+  btn.disabled = true;
+  document.getElementById('ws2-nr').classList.add('laufend');
+  showToast('Analyse läuft...');
+  setTimeout(()=>{
+    zeigeErgebnisFenster('Schritt 2 — Transkriptanalyse', [{
+      label:'Analyse',
+      inhalt:`<div class="analyse-block">
+        <div class="analyse-block-titel">Sprache & Tonalität</div>
+        <div class="analyse-text" contenteditable="true">Justin spricht direkt und bodenständig. Kurze, klare Sätze ohne Fachbegriffe. Jugendlich, aber zielorientiert. Sachliche Entschlossenheit statt übertriebener Begeisterung.</div>
+      </div>
+      <div class="analyse-block">
+        <div class="analyse-block-titel">Schlüsselformulierungen</div>
+        <div class="analyse-text" contenteditable="true">„Mit den Händen arbeiten" · „Am Ende etwas sehen, das ich gemacht habe" · „Nicht im Büro sitzen" · „Handwerk gefällt mir"</div>
+      </div>
+      <div class="analyse-block">
+        <div class="analyse-block-titel">Stärken & Präferenzen</div>
+        <div class="analyse-text" contenteditable="true">Klare Vorstellung vom Arbeitsalltag · Handwerkliche Affinität · Wunsch nach sichtbarem Ergebnis · Bodenständigkeit</div>
+      </div>
+      <div class="check-item" style="margin-top:8px;"><input type="checkbox" id="ws2-freigabe" onchange="ws2Freigabe(this)"> <label style="font-weight:700;margin-bottom:0;">Analyse geprüft und freigegeben</label></div>`
+    }]);
+    btn.textContent = 'Erneut';
+    btn.disabled = false;
+    document.getElementById('ws2-nr').classList.add('done');
+    document.getElementById('ws2-nr').classList.remove('laufend');
+    showToast('Analyse abgeschlossen ✓');
+  }, 2000);
+}
+
+function ws2Freigabe(cb) {
+  if (cb.checked && ws1done) {
+    ws2done = true;
+    document.getElementById('ws3-btn').disabled = false;
+    document.getElementById('ws3-btn').className = 'btn btn-primary';
+    document.getElementById('ws3-voraus').classList.remove('sichtbar');
+    showToast('Schritt 2 freigegeben — Schritt 3 bereit');
+  }
+}
+
+function schritt3() {
+  const btn = document.getElementById('ws3-btn');
+  btn.textContent = '⏳';
+  btn.disabled = true;
+  document.getElementById('ws3-nr').classList.add('laufend');
+  const name = document.getElementById('kp-name')?.value||'Justin Schmidt';
+  const heute = new Date().toLocaleDateString('de-DE');
+  setTimeout(()=>{
+    zeigeErgebnisFenster('Schritt 3 — Protokoll & ToDo', [
+      {label:'Kurzfassung ⬡',inhalt:`<div class="analyse-text" contenteditable="true" style="min-height:80px;">Erstberatung ${heute} · ${name}\n\nZiel: Duale Ausbildung im Handwerk/Holzbereich, bevorzugt Schreiner/Tischler in Region Stuttgart.\n\nKernaussage: Klare handwerkliche Orientierung, Wunsch nach praktischer Tätigkeit mit sichtbarem Ergebnis.\n\nNächster Schritt: Bewerbungsunterlagen aktualisieren, Ausbildungsstellen recherchieren.</div>
+      <div class="check-item" style="margin-top:8px;"><input type="checkbox" onchange="ws3Freigabe(this)"> <label style="font-weight:700;margin-bottom:0;">Kurzfassung freigegeben</label></div>
+      <button class="btn btn-ghost" style="width:100%;margin-top:6px;font-size:10px;" onclick="showToast('Kurzfassung_PDF exportiert...')">Als PDF exportieren</button>`},
+      {label:'Vollfassung',inhalt:`<div class="analyse-text" contenteditable="true" style="min-height:120px;">SITZUNGSPROTOKOLL\n${heute} · ${name}\n\nBERATUNGSANLASS\nErstberatung zum Übergang Schule–Beruf.\n\nERGEBNISSE\nZielrichtung: Duale Ausbildung\nBeruf: Schreiner / Tischler\nRegion: Stuttgart\n\nWICHTIGE AUSSAGEN\n„Ich will mit den Händen arbeiten und am Ende etwas sehen." · „Nicht im Büro sitzen."\n\nNÄCHSTE SCHRITTE\n1. Bewerbungsunterlagen aktualisieren\n2. Stellen recherchieren (IHK, BA)\n3. Bewerbungen bis Ende April</div>
+      <button class="btn btn-ghost" style="width:100%;margin-top:6px;font-size:10px;" onclick="showToast('Vollfassung_PDF exportiert...')">Als PDF exportieren</button>`},
+      {label:'ToDo-Liste ⬡',inhalt:`<div class="analyse-text" contenteditable="true" style="min-height:80px;">TODO-LISTE FÜR ${name.toUpperCase()}\n${heute}\n\n☐ Lebenslauf aktualisieren\n☐ Bewerbungsfoto besorgen\n☐ Ausbildungsstellen suchen (IHK, ausbildung.de, BA)\n☐ Bewerbungen vorbereiten\n☐ Bewerbungen absenden bis Ende April\n☐ Rückmeldungen notieren</div>
+      <button class="btn btn-ghost" style="width:100%;margin-top:6px;font-size:10px;" onclick="showToast('ToDo_PDF exportiert...')">Als PDF exportieren</button>`}
+    ]);
+    btn.textContent = 'Erneut';
+    btn.disabled = false;
+    document.getElementById('ws3-nr').classList.add('done');
+    document.getElementById('ws3-nr').classList.remove('laufend');
+    ws3done = true;
+    document.getElementById('ws5-btn').disabled = false;
+    document.getElementById('ws5-btn').className = 'btn btn-ghost';
+    document.getElementById('ws5-voraus').classList.remove('sichtbar');
+    showToast('Protokoll & ToDo erstellt ✓');
+  }, 1800);
+}
+
+function ws3Freigabe(cb) {
+  if (cb.checked) {
+    document.getElementById('ws4-btn').disabled = false;
+    document.getElementById('ws4-btn').className = 'btn btn-primary';
+    document.getElementById('ws4-voraus').classList.remove('sichtbar');
+    showToast('Schritt 3 freigegeben — Schritt 4 bereit');
+  }
+}
+
+function schritt4() {
+  const btn = document.getElementById('ws4-btn');
+  btn.textContent = '⏳';
+  btn.disabled = true;
+  document.getElementById('ws4-nr').classList.add('laufend');
+  const name = document.getElementById('kp-name')?.value||'Justin Schmidt';
+  setTimeout(()=>{
+    zeigeErgebnisFenster('Schritt 4 — Bewerbungsunterlagen', [
+      {label:'Anschreiben',inhalt:`<div class="analyse-text" contenteditable="true" style="min-height:140px;">${name}\n[Adresse]\n\nSehr geehrte Damen und Herren,\n\nmit großem Interesse bewerbe ich mich um einen Ausbildungsplatz als Tischler/in. Handwerkliche Arbeit liegt mir am Herzen — ich möchte etwas mit meinen Händen erschaffen, das ich am Ende des Tages sehen kann.\n\nIn der Schule haben mich besonders praktische Fächer begeistert. Die Arbeit mit Holz und die Möglichkeit, eigene Ideen in etwas Greifbares umzusetzen, motivieren mich sehr.\n\nIch freue mich auf ein persönliches Gespräch.\n\nMit freundlichen Grüßen\n${name}</div>
+      <div class="info-box" style="margin-top:6px;">Text prüfen und anpassen vor Export.</div>
+      <button class="btn btn-ghost" style="width:100%;margin-top:6px;font-size:10px;" onclick="showToast('Anschreiben exportiert...')">Als PDF exportieren</button>`},
+      {label:'Lebenslauf-Bausteine',inhalt:`<div class="analyse-text" contenteditable="true" style="min-height:120px;">PERSÖNLICHE DATEN\nName: ${name}\n\nSCHULBILDUNG\nRealschule — Klasse 10 (aktuell)\n\nPRAKTIKA\n[Praktika hier ergänzen]\n\nSTÄRKEN\nHandwerkliches Geschick · Räumliches Denken · Zuverlässigkeit\n\nINTERESSEN\nHolzarbeiten · Technik · Handwerk</div>
+      <button class="btn btn-ghost" style="width:100%;margin-top:6px;font-size:10px;" onclick="showToast('Lebenslauf exportiert...')">Als PDF exportieren</button>`}
+    ]);
+    btn.textContent = 'Erneut';
+    btn.disabled = false;
+    document.getElementById('ws4-nr').classList.add('done');
+    document.getElementById('ws4-nr').classList.remove('laufend');
+    showToast('Bewerbungsentwürfe erstellt ✓');
+  }, 2000);
+}
+
+function schritt5() {
+  const name = (document.getElementById('kp-name')?.value||'Justin_Schmidt').replace(' ','_');
+  const datum = new Date().toISOString().slice(0,10);
+  zeigeErgebnisFenster('Schritt 5 — Exportieren', [{
+    label:'Export',
+    inhalt:`<div style="display:flex;flex-direction:column;gap:6px;">
+      <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px;">Schema: ${name}_${datum}_Dokumenttyp.pdf</div>
+      <div style="font-size:11px;font-weight:700;color:var(--text-primary);margin-bottom:4px;">Lokaler Ordner</div>
+      <button class="btn btn-primary" style="width:100%;font-size:10px;" onclick="showToast('${name}_${datum}_Protokoll.pdf → Exporte/ ✓')">Protokoll exportieren</button>
+      <button class="btn btn-ghost" style="width:100%;font-size:10px;" onclick="showToast('${name}_${datum}_ToDo.pdf → Exporte/ ✓')">ToDo-Liste exportieren</button>
+      <button class="btn btn-ghost" style="width:100%;font-size:10px;" onclick="showToast('${name}_${datum}_Anschreiben.pdf → Exporte/ ✓')">Anschreiben exportieren</button>
+      <button class="btn btn-ghost" style="width:100%;font-size:10px;" onclick="showToast('${name}_${datum}_Lebenslauf.pdf → Exporte/ ✓')">Lebenslauf exportieren</button>
+      <div class="divider" style="margin:4px 0;"></div>
+      <div style="font-size:11px;font-weight:700;color:var(--text-primary);margin-bottom:4px;">Nextcloud-Ordner</div>
+      <button class="btn btn-ghost" style="width:100%;font-size:10px;" onclick="showToast('${name}_${datum}_Protokoll.pdf → Nextcloud/ ✓')">Protokoll → Nextcloud</button>
+      <button class="btn btn-ghost" style="width:100%;font-size:10px;" onclick="showToast('Alle Dokumente → Nextcloud/ ✓')">Alle Dokumente → Nextcloud</button>
+      <div class="info-box" style="margin-top:4px;">Dateien liegen in <strong>/data/SPoT/Exporte/</strong></div>
+    </div>`
+  }]);
+  document.getElementById('ws5-nr').classList.add('done');
+}
+
+// ── VORAUSSETZUNGS-HINWEISE initial zeigen ──
+function initVoraussetzungen() {
+  document.getElementById('ws2-voraus').classList.add('sichtbar');
+  document.getElementById('ws3-voraus').classList.add('sichtbar');
+  document.getElementById('ws4-voraus').classList.add('sichtbar');
+  document.getElementById('ws5-voraus').classList.add('sichtbar');
+}
+
+// ── DASHBOARD FUNKTIONEN ──
+function updateStartZiel() {
+  const s = document.getElementById('szStart');
+  const z = document.getElementById('szZiel');
+  const sum = document.getElementById('szSummary');
+  if (sum&&s&&z) sum.textContent=(s.value||'Start')+' → '+(z.value||'Ziel');
+}
+function updateGuideForField(fieldId) {
+  const f = document.getElementById(fieldId);
+  const g = document.getElementById('guide-'+fieldId);
+  if (!f||!g) return;
+  g.classList.toggle('hidden', !!f.value.trim());
+}
+function updateClientHeader() {
+  const name = document.getElementById('clientName')?.value||'JUSTIN SCHMIDT';
+  const age  = document.getElementById('clientAge')?.value||'16';
+  const el   = document.getElementById('clientSubtitle');
+  if (el) el.textContent='Kunde: '+name+' ('+age+' Jahre)';
+}
+function toggleMic(el) {
+  el.classList.toggle('recording');
+  if (el.classList.contains('recording')) {
+    el.textContent='⏹';
+    showToast('Aufnahme läuft...');
+    setTimeout(()=>{el.classList.remove('recording');el.textContent='🎙️';},3000);
+  } else el.textContent='🎙️';
+}
+function toggleRecordQ(btn, fieldId) {
+  const field = document.getElementById(fieldId);
+  if (!btn.textContent.includes('STOPPEN')) {
+    btn.textContent='⏹ STOPPEN';
+    btn.style.background='var(--red)';
+    showToast('Transkription läuft...');
+    const demos={
+      q1text:'Ich möchte nach dem Gespräch wissen, ob eine Ausbildung zum Schreiner für mich passt und wie ich anfangen soll.',
+      q2text:'Ich kann mir vorstellen, etwas mit Holz zu machen. Handwerk gefällt mir, ich will nicht im Büro sitzen.',
+      q3text:'Ich würde merken, dass es passt, wenn ich mit den Händen arbeite und am Ende etwas sehen kann, das ich gemacht habe.',
+    };
+    let demo=demos[fieldId]||'Antwort...', i=0; field.value='';
+    const iv=setInterval(()=>{if(i<demo.length){field.value+=demo[i++];updateGuideForField(fieldId);}else clearInterval(iv);},35);
+  } else {
+    btn.textContent='AUFNAHME';
+    btn.style.background='var(--primary)';
+  }
+}
+function toggleChip(el){el.classList.toggle('active');}
+
+// ── WISSENSBASIS ──
+const wbDemo=[
+  {titel:'Förderung Ausbildung BaWü 2026',datei:'Förderübersicht_BaWü.pdf',seite:'S. 12',typ:'pdf',auszug:'Ausbildungsbegleitende Hilfen (abH) können ab Beginn der Ausbildung beantragt werden. Antrag über die Berufsberatung der BA.'},
+  {titel:'Ausbildungsberufe Holz & Möbel',datei:'Ausbildungsberufe_BW_2025.pdf',seite:'S. 34',typ:'pdf',auszug:'Tischler/in: 3-jährige duale Ausbildung. Kein Mindestabschluss vorgeschrieben.'},
+  {titel:'Fristen Ausbildungsbewerbung 2026',datei:'Fristen_Ausbildung_2026.pdf',seite:'S. 3',typ:'pdf',auszug:'Empfohlener Bewerbungsstart: Oktober des Vorjahres. Spätestens März/April.'},
+  {titel:'IHK Stuttgart — Ausbildungsberufe',datei:'ihk-stuttgart.de',seite:'',typ:'web',auszug:'Übersicht aller Ausbildungsberufe im IHK-Bezirk Stuttgart mit Lehrstellenbörse.'},
+];
+function wbSuche(val) {
+  const box=document.getElementById('wbSuchergebnisse');
+  if (!val||val.trim().length<2){box.innerHTML='<div style="text-align:center;padding:20px;font-family:var(--mono);font-size:11px;color:var(--text-dim);border:1px dashed var(--border);border-radius:6px;">Suchbegriff eingeben um Dokumente zu durchsuchen</div>';return;}
+  box.innerHTML=wbDemo.map(r=>`
+    <div class="search-result-item" onclick="showToast('Dokument öffnet...')">
+      <div class="search-result-title">${r.titel}</div>
+      <div class="search-result-excerpt">${r.auszug}</div>
+      <div class="search-result-meta">
+        <span>${r.typ==='pdf'?'📄 PDF':'🌐 Web'} · ${r.datei}</span>
+        ${r.seite?`<span>${r.seite}</span>`:''}
+      </div>
+    </div>`).join('');
+}
+function webQuelleHinzufuegen() {
+  const url=document.getElementById('wq-url').value.trim();
+  const titel=document.getElementById('wq-titel').value.trim();
+  const kat=document.getElementById('wq-kat').value;
+  const datum=document.getElementById('wq-datum').value.trim();
+  if (!url||!titel){showToast('URL und Titel erforderlich');return;}
+  const badge=kat==='Zeitkritisch'?'badge-orange':'badge-gray';
+  const dCol=kat==='Zeitkritisch'?'color:var(--orange)':'color:var(--text-dim)';
+  const row=document.createElement('tr');
+  row.innerHTML=`<td><a href="${url}" target="_blank" style="color:var(--primary);text-decoration:none;">${titel}</a></td><td><span class="badge ${badge}">${kat}</span></td><td style="${dCol}">${datum||'–'}</td><td><button class="btn btn-red" style="font-size:9px;padding:3px 6px;" onclick="bestaetigungsDialog('Web-Quelle löschen?','',()=>this.closest('tr').remove())">🗑</button></td>`;
+  document.getElementById('webQuellenListe').appendChild(row);
+  ['wq-url','wq-titel','wq-datum'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('webQuelleForm').style.display='none';
+  showToast('Web-Quelle hinzugefügt ✓');
+}
+
+// ── STELLENRECHERCHE ──
+function starteRecherche() {
+  const btn=document.getElementById('recherchBtn');
+  btn.textContent='⏳ Suche läuft...';
+  btn.disabled=true;
+  showToast('Stellenrecherche gestartet...');
+  setTimeout(()=>{
+    document.getElementById('rechercheErgebnisse').style.display='block';
+    btn.textContent='Erneut suchen';
+    btn.disabled=false;
+  },1800);
+}
+function uebernehmeStellenauswahl() {
+  const checked=document.querySelectorAll('#rechercheErgebnisse input[type=checkbox]:checked');
+  if (!checked.length){showToast('Keine Stellen ausgewählt');return;}
+  showToast(checked.length+' Stelle(n) übernommen ✓');
+}
+
+// ── EINSTELLUNGEN ──
+function toggleApiKey(id){const i=document.getElementById(id);i.type=i.type==='password'?'text':'password';}
+function toggleLLM(cb){
+  const label=document.getElementById('llm-toggle-label');
+  const config=document.getElementById('llm-config');
+  label.textContent=cb.checked?'Aktiviert':'Deaktiviert';
+  config.style.display=cb.checked?'flex':'none';
+}
+
+// ── TOAST ──
+function showToast(msg){
+  const el=document.getElementById('toastEl');
+  el.textContent=msg;
+  el.style.transform='translateX(-50%) translateY(0)';
+  setTimeout(()=>{el.style.transform='translateX(-50%) translateY(80px)';},2800);
+}
+
+// ── INIT ──
+window.addEventListener('DOMContentLoaded',()=>{
+  ['q1text','q2text','q3text'].forEach(updateGuideForField);
+  updateStartZiel();
+  initVoraussetzungen();
+  document.getElementById('llm-config').style.display='none';
+});
+</script>
+</body>
+</html>
